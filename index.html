@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Домашний Шеф</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #101820);
+            color: var(--tg-theme-text-color, #ffffff);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        header p {
+            color: var(--tg-theme-hint-color, #aab4c0);
+        }
+
+        .search {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            margin-bottom: 22px;
+            font-size: 16px;
+            background: var(--tg-theme-secondary-bg-color, #263442);
+            color: var(--tg-theme-text-color, white);
+        }
+
+        h2 {
+            font-size: 21px;
+            margin-bottom: 15px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #263442);
+            border-radius: 16px;
+            overflow: hidden;
+            padding-bottom: 14px;
+        }
+
+        .food {
+            height: 115px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 65px;
+            background: #344657;
+        }
+
+        .card h3 {
+            font-size: 15px;
+            margin: 12px 10px 6px;
+        }
+
+        .card p {
+            font-size: 12px;
+            margin: 0 10px;
+            color: var(--tg-theme-hint-color, #aab4c0);
+        }
+
+        .menu {
+            display: grid;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .menu button {
+            border: none;
+            border-radius: 13px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: bold;
+            background: var(--tg-theme-button-color, #3985d6);
+            color: var(--tg-theme-button-text-color, white);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>👨‍🍳 Домашний Шеф</h1>
+        <p>Вкусные блюда из того, что есть дома</p>
+    </header>
+
+    <input
+        class="search"
+        type="text"
+        placeholder="🔎 Найти любимое блюдо..."
+    >
+
+    <h2>🍽 Популярные блюда</h2>
+
+    <div class="grid">
+
+        <div class="card">
+            <div class="food">🍗</div>
+            <h3>Курица с картошкой</h3>
+            <p>45 минут · Просто</p>
+        </div>
+
+        <div class="card">
+            <div class="food">🍝</div>
+            <h3>Макароны с сыром</h3>
+            <p>20 минут · Просто</p>
+        </div>
+
+        <div class="card">
+            <div class="food">🥗</div>
+            <h3>Овощной салат</h3>
+            <p>10 минут · Очень просто</p>
+        </div>
+
+        <div class="card">
+            <div class="food">🍳</div>
+            <h3>Омлет с сыром</h3>
+            <p>15 минут · Просто</p>
+        </div>
+
+    </div>
+
+    <div class="menu">
+        <button onclick="showMessage('Поиск рецептов скоро появится!')">
+            🔎 Найти рецепт
+        </button>
+
+        <button onclick="showMessage('Подбор блюд скоро появится!')">
+            🥘 Что приготовить?
+        </button>
+
+        <button onclick="showMessage('Список покупок скоро появится!')">
+            🛒 Список покупок
+        </button>
+    </div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        function showMessage(text) {
+            if (tg) {
+                tg.showAlert(text);
+            } else {
+                alert(text);
+            }
+        }
+    </script>
+
+</body>
+</html>
