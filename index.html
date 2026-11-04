@@ -1,293 +1,89 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101820">
 <title>Домашний Шеф</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <style>
-* { box-sizing: border-box; }
-
-body {
-    margin: 0;
-    padding: 20px;
-    font-family: Arial, sans-serif;
-    background: var(--tg-theme-bg-color, #101820);
-    color: var(--tg-theme-text-color, white);
-}
-
-header {
-    text-align: center;
-    margin-bottom: 25px;
-}
-
-header h1 { font-size: 28px; }
-
-header p {
-    color: var(--tg-theme-hint-color, #aab4c0);
-}
-
-.search {
-    width: 100%;
-    padding: 16px;
-    border: none;
-    border-radius: 14px;
-    margin-bottom: 22px;
-    font-size: 16px;
-    background: var(--tg-theme-secondary-bg-color, #263442);
-    color: var(--tg-theme-text-color, white);
-}
-
-h2 { font-size: 21px; }
-
-.grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.card {
-    background: var(--tg-theme-secondary-bg-color, #263442);
-    border-radius: 16px;
-    overflow: hidden;
-    padding-bottom: 14px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.food {
-    height: 115px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 65px;
-    background: #344657;
-}
-
-.card h3 {
-    font-size: 15px;
-    margin: 12px 10px 6px;
-}
-
-.card p {
-    font-size: 12px;
-    margin: 0 10px;
-    color: var(--tg-theme-hint-color, #aab4c0);
-}
-
-button {
-    width: 100%;
-    border: none;
-    border-radius: 13px;
-    padding: 16px;
-    margin-top: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    background: var(--tg-theme-button-color, #3985d6);
-    color: var(--tg-theme-button-text-color, white);
-    cursor: pointer;
-}
-
-.recipe {
-    background: var(--tg-theme-secondary-bg-color, #263442);
-    padding: 18px;
-    border-radius: 16px;
-    margin-top: 15px;
-}
-
-.hidden { display: none; }
+:root{--bg:var(--tg-theme-bg-color,#101820);--panel:var(--tg-theme-secondary-bg-color,#1b2935);--text:var(--tg-theme-text-color,#f5f7fa);--muted:var(--tg-theme-hint-color,#9eabb8);--accent:var(--tg-theme-button-color,#70b7a5);--line:rgba(255,255,255,.09)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;padding:0 0 calc(82px + env(safe-area-inset-bottom))}
+header{padding:24px 18px 14px;background:linear-gradient(145deg,#203d42,#172631);border-radius:0 0 24px 24px}
+h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:16px;max-width:760px;margin:auto}
+.search, input,textarea{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:13px 14px;border-radius:13px;font:inherit;outline:none}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px}.section-title h2{font-size:19px;margin:0}
+.chips{display:flex;gap:8px;overflow:auto;padding:2px 0 10px}.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 13px;border-radius:20px}.chip.active{background:var(--accent);color:#10201e;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden;cursor:pointer;min-width:0}.photo{height:112px;display:grid;place-items:center;font-size:48px;background:linear-gradient(135deg,#29464a,#263447)}.cardbody{padding:11px}.card h3{font-size:15px;margin:0 0 5px}.muted{color:var(--muted);font-size:13px}.btn{border:0;border-radius:12px;background:var(--accent);color:#10201e;font-weight:700;padding:12px 15px;font:inherit;cursor:pointer}.btn.secondary{background:var(--panel);color:var(--text);border:1px solid var(--line)}.btn.full{width:100%;margin-top:10px}.row{display:flex;gap:9px;align-items:center}.row>*{flex:1}.hidden{display:none!important}.detail-photo{font-size:76px;text-align:center;padding:28px;background:var(--panel);border-radius:18px}.detail h2{margin-bottom:4px}.ingredients{padding-left:20px}.ingredients li{padding:5px 0}.item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--panel);border-radius:12px;margin:8px 0}.item span{flex:1}.item.done span{text-decoration:line-through;color:var(--muted)}.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:var(--panel);border-top:1px solid var(--line);padding:9px 5px calc(9px + env(safe-area-inset-bottom));z-index:5}.tab{background:none;border:0;color:var(--muted);font:12px system-ui;display:grid;gap:3px;justify-items:center;min-width:55px}.tab b{font-size:20px;font-weight:400}.tab.active{color:var(--accent)}.empty{text-align:center;padding:30px 12px;color:var(--muted)}.back{margin:0 0 12px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.photo{height:140px}}
 </style>
 </head>
-
 <body>
-
-<header>
-    <h1>👨‍🍳 Домашний Шеф</h1>
-    <p>Вкусные блюда из того, что есть дома</p>
-</header>
-
-<div id="catalog">
-    <input class="search" id="search"
-           type="text"
-           placeholder="🔎 Найти любимое блюдо...">
-
-    <h2>🍽 Популярные блюда</h2>
-    <div class="grid" id="grid"></div>
-</div>
-
-<div id="details" class="hidden">
-    <button id="backButton">← Назад к блюдам</button>
-
-    <div class="recipe">
-        <h2 id="recipeTitle"></h2>
-
-        <h3>🥕 Ингредиенты</h3>
-        <ul id="ingredients"></ul>
-
-        <h3>👨‍🍳 Приготовление</h3>
-        <p id="instructions"></p>
-    </div>
-</div>
-
+<header><h1>👨‍🍳 Домашний Шеф</h1><p>Вкусные идеи, простые рецепты и покупки без суеты</p></header>
+<main class="wrap">
+<section id="home">
+<input id="search" class="search" placeholder="🔎 Найти блюдо или ингредиент">
+<div class="section-title"><h2>Категории</h2></div>
+<div class="chips" id="categories"></div>
+<div class="section-title"><h2 id="catalogTitle">Что приготовим?</h2><span class="muted" id="count"></span></div>
+<div class="grid" id="recipes"></div>
+</section>
+<section id="detail" class="hidden"></section>
+<section id="favorites" class="hidden"><div class="section-title"><h2>Избранное ❤️</h2></div><div class="grid" id="favoriteList"></div></section>
+<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><div id="shoppingList"></div></section>
+<section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
+</main>
+<nav class="tabs">
+<button class="tab active" data-tab="home"><b>🏠</b>Главная</button>
+<button class="tab" data-tab="favorites"><b>❤️</b>Избранное</button>
+<button class="tab" data-tab="shopping"><b>🛒</b>Покупки</button>
+<button class="tab" data-tab="profile"><b>👤</b>Профиль</button>
+</nav>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const tg = window.Telegram?.WebApp;
-
-    if (tg) {
-        tg.ready();
-        tg.expand();
-    }
-
-    const dishes = [
-        {
-            name: "Курица с картошкой",
-            emoji: "🍗",
-            time: "45 минут · Просто",
-            ingredients: [
-                "Курица — 500 г",
-                "Картофель — 5 шт.",
-                "Лук — 1 шт.",
-                "Соль и специи"
-            ],
-            steps: "1. Нарежьте курицу и картофель. 2. Добавьте лук, соль и специи. 3. Запекайте при 190°C около 40 минут до готовности."
-        },
-        {
-            name: "Макароны с сыром",
-            emoji: "🍝",
-            time: "20 минут · Просто",
-            ingredients: [
-                "Макароны — 200 г",
-                "Сыр — 100 г",
-                "Молоко — 100 мл",
-                "Соль"
-            ],
-            steps: "1. Отварите макароны. 2. Добавьте молоко и натёртый сыр. 3. Помешивайте на слабом огне, пока сыр не расплавится."
-        },
-        {
-            name: "Овощной салат",
-            emoji: "🥗",
-            time: "10 минут · Очень просто",
-            ingredients: [
-                "Помидоры — 2 шт.",
-                "Огурцы — 2 шт.",
-                "Зелень",
-                "Масло, соль"
-            ],
-            steps: "1. Нарежьте овощи. 2. Добавьте зелень. 3. Заправьте маслом и посолите по вкусу."
-        },
-        {
-            name: "Омлет с сыром",
-            emoji: "🍳",
-            time: "15 минут · Просто",
-            ingredients: [
-                "Яйца — 3 шт.",
-                "Молоко — 50 мл",
-                "Сыр — 50 г",
-                "Соль"
-            ],
-            steps: "1. Взбейте яйца с молоком и солью. 2. Вылейте на сковороду. 3. Добавьте сыр и готовьте под крышкой на слабом огне до полной готовности."
-        }
-    ];
-
-    const grid = document.getElementById("grid");
-    const catalog = document.getElementById("catalog");
-    const details = document.getElementById("details");
-    const search = document.getElementById("search");
-
-    function render(list) {
-        grid.innerHTML = "";
-
-        list.forEach(function (dish) {
-            const index = dishes.indexOf(dish);
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.dataset.dishIndex = index;
-
-            card.innerHTML = `
-                <div class="food">${dish.emoji}</div>
-                <h3>${dish.name}</h3>
-                <p>${dish.time}</p>
-            `;
-
-            grid.appendChild(card);
-        });
-    }
-
-    function openRecipe(index) {
-        const dish = dishes[index];
-
-        if (!dish) return;
-
-        catalog.classList.add("hidden");
-        details.classList.remove("hidden");
-
-        document.getElementById("recipeTitle").textContent =
-            dish.emoji + " " + dish.name;
-
-        const ingredients = document.getElementById("ingredients");
-        ingredients.innerHTML = "";
-
-        dish.ingredients.forEach(function (item) {
-            const li = document.createElement("li");
-            li.textContent = item;
-            ingredients.appendChild(li);
-        });
-
-        document.getElementById("instructions").textContent =
-            dish.steps;
-
-        if (tg && tg.BackButton) {
-            tg.BackButton.show();
-        }
-    }
-
-    function back() {
-        details.classList.add("hidden");
-        catalog.classList.remove("hidden");
-
-        if (tg && tg.BackButton) {
-            tg.BackButton.hide();
-        }
-    }
-
-    // Один обработчик на все карточки
-    grid.addEventListener("click", function (event) {
-        const card = event.target.closest(".card");
-
-        if (!card || !grid.contains(card)) return;
-
-        const index = Number(card.dataset.dishIndex);
-        openRecipe(index);
-    });
-
-    // Кнопка возврата
-    document.getElementById("backButton")
-        .addEventListener("click", back);
-
-    // Кнопка возврата Telegram
-    if (tg && tg.BackButton) {
-        tg.BackButton.onClick(back);
-    }
-
-    // Поиск
-    search.addEventListener("input", function () {
-        const query = search.value.toLowerCase().trim();
-
-        const filtered = dishes.filter(function (dish) {
-            return dish.name.toLowerCase().includes(query);
-        });
-
-        render(filtered);
-    });
-
-    render(dishes);
-
-});
+const recipes=[
+{id:1,name:'Сырный омлет',emoji:'🍳',category:'Завтрак',time:15,desc:'Нежный омлет с сыром на каждый день.',ingredients:['Яйца — 3 шт.','Молоко — 50 мл','Сыр — 50 г','Соль — по вкусу'],steps:['Взбейте яйца с молоком и солью.','Вылейте смесь на разогретую сковороду.','Добавьте сыр и готовьте под крышкой 5–7 минут.']},
+{id:2,name:'Овсянка с бананом',emoji:'🥣',category:'Завтрак',time:10,desc:'Быстрый и сытный завтрак.',ingredients:['Овсяные хлопья —  כמו 50 г','Молоко или вода — 200 мл','Банан — 1 шт.','Мёд — по желанию'],steps:['Залейте хлопья молоком или водой.','Варите 5–7 минут, помешивая.','Добавьте нарезанный банан и мёд.']},
+{id:3,name:'Курица с картофелем',emoji:'🍗',category:'Ужин',time:45,desc:'Домашнее блюдо из доступных продуктов.',ingredients:['Курица — 400 г','Картофель — 500 г','Лук — 1 шт.','Масло, соль, специи'],steps:['Нарежьте картофель и лук.','Выложите всё в форму, добавьте курицу и специи.','Запекайте при 190°C около 35–40 минут до готовности.']},
+{id:4,name:'Паста с сыром',emoji:'🍝',category:'Обед',time:20,desc:'Простая сливочная паста.',ingredients:['Макароны — 200 г','Сыр — 80 г','Сливки — 100 мл','Соль, перец'],steps:['Отварите макароны.','Нагрейте сливки, добавьте тёртый сыр.','Смешайте соус с макаронами.']},
+{id:5,name:'Овощной салат',emoji:'🥗',category:'Салаты',time:10,desc:'Свежий салат к обеду или ужину.',ingredients:['Помидоры — 2 шт.','Огурец — 1 шт.','Зелень','Масло, соль'],steps:['Нарежьте овощи.','Добавьте зелень, масло и соль.','Перемешайте и подавайте.']},
+{id:6,name:'Томатный суп',emoji:'🍅',category:'Супы',time:30,desc:'Ароматный лёгкий суп.',ingredients:['Томаты — 400 г','Лук — 1 шт.','Чеснок — 2 зубчика','Бульон — 500 мл'],steps:['Обжарьте лук и чеснок.','Добавьте томаты и бульон.','Варите 20 минут и измельчите блендером.']},
+{id:7,name:'Сырники',emoji:'🥞',category:'Завтрак',time:25,desc:'Румяные сырники к чаю.',ingredients:['Творог — 300 г','Яйцо — 1 шт.','Мука — 3 ст. л.','Сахар — 1 ст. л.'],steps:['Смешайте творог, яйцо, сахар и муку.','Сформируйте сырники.','Обжарьте с двух сторон до золотистой корочки.']},
+{id:8,name:'Рис с овощами',emoji:'🍚',category:'Обед',time:25,desc:'Универсальный гарнир или самостоятельное блюдо.',ingredients:['Рис — 180 г','Морковь — 1 шт.','Перец — 1 шт.','Лук — 1 шт.'],steps:['Отварите рис почти до готовности.','Обжарьте овощи.','Добавьте рис и прогрейте вместе 3–4 минуты.']},
+{id:9,name:'Запечённая рыба',emoji:'🐟',category:'Ужин',time:30,desc:'Нежная рыба с лимоном.',ingredients:['Филе рыбы — 400 г','Лимон — ½ шт.','Масло — 1 ст. л.','Соль, специи'],steps:['Посолите рыбу и сбрызните лимоном.','Смажьте форму маслом и выложите филе.','Запекайте при 190°C 18–22 минуты.']},
+{id:10,name:'Фруктовый десерт',emoji:'🍓',category:'Десерты',time:10,desc:'Лёгкий десерт без выпечки.',ingredients:['Яблоко — 1 шт.','Банан — 1 шт.','Йогурт — 150 г','Ягоды — горсть'],steps:['Нарежьте фрукты.','Разложите по креманкам.','Добавьте йогурт и ягоды.']},
+{id:11,name:'Гречка с грибами',emoji:'🍄',category:'Обед',time:30,desc:'Сытное блюдо с ароматными грибами.',ingredients:['Гречка — 200 г','Шампиньоны — 200 г','Лук — 1 шт.','Масло, соль'],steps:['Отварите гречку.','Обжарьте лук и грибы.','Смешайте с гречкой.']},
+{id:12,name:'Оладьи',emoji:'🥯',category:'Завтрак',time:20,desc:'Пышные оладьи на кефире.',ingredients:['Кефир — 250 мл','Яйцо — 1 шт.','Мука — 180 г','Сода — ½ ч. л.'],steps:['Смешайте кефир, яйцо и муку с содой.','Дайте тесту постоять 5 минут.','Жарьте небольшие оладьи на среднем огне.']},
+{id:13,name:'Куриный суп',emoji:'🍲',category:'Супы',time:50,desc:'Классический домашний суп.',ingredients:['Курица — 300 г','Картофель — 2 шт.','Морковь — 1 шт.','Вермишель — 50 г'],steps:['Сварите куриный бульон.','Добавьте картофель и морковь.','В конце добавьте вермишель и варите до готовности.']},
+{id:14,name:'Греческий салат',emoji:'🫒',category:'Салаты',time:15,desc:'Овощи, фета и оливки.',ingredients:['Помидоры — 2 шт.','Огурец — 1 шт.','Фета — 100 г','Оливки, масло'],steps:['Крупно нарежьте овощи и фету.','Добавьте оливки.','Заправьте оливковым маслом.']},
+{id:15,name:'Картофельная запеканка',emoji:'🥘',category:'Ужин',time:55,desc:'Сытная запеканка для всей семьи.',ingredients:['Картофель — 600 г','Фарш — 300 г','Лук — 1 шт.','Сыр — 70 г'],steps:['Отварите картофель и сделайте пюре.','Обжарьте фарш с луком.','Выложите слоями, посыпьте сыром и запекайте 20 минут при 190°C.']},
+{id:16,name:'Банановые панкейки',emoji:'🥞',category:'Десерты',time:15,desc:'Сладкие панкейки без добавленного сахара.',ingredients:['Банан — 1 шт.','Яйцо — 1 шт.','Мука — 4 ст. л.','Молоко — 50 мл'],steps:['Разомните банан.','Смешайте с яйцом, молоком и мукой.','Жарьте небольшие панкейки с двух сторон.']}
+];
+let category='Все',currentTab='home';
+const $=id=>document.getElementById(id);
+const get=(key,def)=>{try{return JSON.parse(localStorage.getItem(key))||def}catch{return def}};
+let favorites=get('hc_favorites',[]), shopping=get('hc_shopping',[]);
+function save(){localStorage.setItem('hc_favorites',JSON.stringify(favorites));localStorage.setItem('hc_shopping',JSON.stringify(shopping))}
+function showTab(tab){currentTab=tab;['home','detail','favorites','shopping','profile'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='favorites')renderFavorites();if(tab==='shopping')renderShopping();if(tab==='profile')renderProfile();window.scrollTo(0,0)}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+const cats=['Все','Завтрак','Обед','Ужин','Супы','Салаты','Десерты'];
+$('categories').innerHTML=cats.map(c=>'<button class="chip '+(c===category?'active':'')+'" data-cat="'+c+'">'+c+'</button>').join('');
+$('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;category=b.dataset.cat;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x.dataset.cat===category));renderRecipes()});
+function renderRecipes(){const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
+function cardHTML(r){return '<article class="card" data-recipe="'+r.id+'"><div class="photo">'+r.emoji+'</div><div class="cardbody"><h3>'+r.name+'</h3><div class="muted">⏱ '+r.time+' мин · '+r.category+'</div></div></article>'}
+function openRecipe(id){const r=recipes.find(x=>x.id===Number(id));if(!r)return;$('detail').innerHTML='<button class="btn secondary back" id="back">← Назад</button><div class="detail-photo">'+r.emoji+'</div><div class="detail"><h2>'+r.name+'</h2><p class="muted">⏱ '+r.time+' минут · '+r.category+'</p><p>'+r.desc+'</p><div class="section-title"><h2>Ингредиенты</h2></div><ul class="ingredients">'+r.ingredients.map(i=>'<li>'+i+'</li>').join('')+'</ul><button class="btn full" id="addIngredients">＋ Добавить ингредиенты в покупки</button><div class="section-title"><h2>Приготовление</h2></div><ol class="ingredients">'+r.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol><button class="btn secondary full" id="toggleFavorite">'+(favorites.includes(r.id)?'♥ В избранном':'♡ В избранное')+'</button></div>';$('home').classList.add('hidden');$('detail').classList.remove('hidden');$('back').onclick=()=>showTab('home');$('addIngredients').onclick=()=>{r.ingredients.forEach(i=>{if(!shopping.some(x=>x.name===i))shopping.push({name:i,done:false})});save();$('addIngredients').textContent='✓ Добавлено в покупки';};$('toggleFavorite').onclick=()=>{favorites=favorites.includes(r.id)?favorites.filter(x=>x!==r.id):[...favorites,r.id];save();$('toggleFavorite').textContent=favorites.includes(r.id)?'♥ В избранном':'♡ В избранное';};window.scrollTo(0,0)}
+$('recipes').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
+$('search').addEventListener('input',renderRecipes);
+function renderFavorites(){$('favoriteList').innerHTML=favorites.length?recipes.filter(r=>favorites.includes(r.id)).map(cardHTML).join(''):'<div class="empty">Пока нет избранных рецептов.<br>Нажмите ♡ в карточке блюда.</div>'}
+$('favoriteList').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
+function renderShopping(){$('shoppingList').innerHTML=shopping.length?shopping.map((x,i)=>'<div class="item '+(x.done?'done':'')+'"><input type="checkbox" data-check="'+i+'" '+(x.done?'checked':'')+' style="width:20px;height:20px"><span>'+escapeHTML(x.name)+'</span><button class="btn secondary" data-delete="'+i+'">✕</button></div>').join(''):'<div class="empty">Список пока пуст.<br>Добавьте продукты вручную или из рецепта.</div>';$('buyCount').textContent=shopping.filter(x=>x.done).length}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('addItem').onclick=()=>{const v=$('newItem').value.trim();if(!v)return;shopping.push({name:v,done:false});$('newItem').value='';save();renderShopping()};
+$('newItem').addEventListener('keydown',e=>{if(e.key==='Enter')$('addItem').click()});
+$('shoppingList').addEventListener('change',e=>{if(e.target.dataset.check!==undefined){shopping[Number(e.target.dataset.check)].done=e.target.checked;save();renderShopping()}});
+$('shoppingList').addEventListener('click',e=>{if(e.target.dataset.delete!==undefined){shopping.splice(Number(e.target.dataset.delete),1);save();renderShopping()}});
+$('clearList').onclick=()=>{if(shopping.length&&confirm('Удалить все продукты из списка?')){shopping=[];save();renderShopping()}};
+function renderProfile(){const u=window.Telegram?.WebApp?.initDataUnsafe?.user;$('userName').textContent=u?(u.first_name||'Повар')+(u.last_name?' '+u.last_name:''):'Домашний повар';$('favCount').textContent=favorites.length;$('buyCount').textContent=shopping.filter(x=>x.done).length}
+try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}}catch(e){}
+renderRecipes();
 </script>
-
-</body>
-</html>
+</body></html>
