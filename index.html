@@ -6,162 +6,288 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Домашний Шеф</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
 * { box-sizing: border-box; }
+
 body {
-    margin: 0; padding: 20px;
+    margin: 0;
+    padding: 20px;
     font-family: Arial, sans-serif;
     background: var(--tg-theme-bg-color, #101820);
     color: var(--tg-theme-text-color, white);
 }
-header { text-align: center; margin-bottom: 25px; }
+
+header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
 header h1 { font-size: 28px; }
-header p { color: var(--tg-theme-hint-color, #aab4c0); }
+
+header p {
+    color: var(--tg-theme-hint-color, #aab4c0);
+}
+
 .search {
-    width: 100%; padding: 16px; border: none;
-    border-radius: 14px; margin-bottom: 22px;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    margin-bottom: 22px;
     font-size: 16px;
     background: var(--tg-theme-secondary-bg-color, #263442);
     color: var(--tg-theme-text-color, white);
 }
+
 h2 { font-size: 21px; }
+
 .grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
+
 .card {
     background: var(--tg-theme-secondary-bg-color, #263442);
-    border-radius: 16px; overflow: hidden;
-    padding-bottom: 14px; cursor: pointer;
+    border-radius: 16px;
+    overflow: hidden;
+    padding-bottom: 14px;
+    cursor: pointer;
+    user-select: none;
 }
+
 .food {
-    height: 115px; display: flex;
-    align-items: center; justify-content: center;
-    font-size: 65px; background: #344657;
+    height: 115px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 65px;
+    background: #344657;
 }
-.card h3 { font-size: 15px; margin: 12px 10px 6px; }
+
+.card h3 {
+    font-size: 15px;
+    margin: 12px 10px 6px;
+}
+
 .card p {
-    font-size: 12px; margin: 0 10px;
+    font-size: 12px;
+    margin: 0 10px;
     color: var(--tg-theme-hint-color, #aab4c0);
 }
+
 button {
-    width: 100%; border: none; border-radius: 13px;
-    padding: 16px; margin-top: 12px;
-    font-size: 16px; font-weight: bold;
+    width: 100%;
+    border: none;
+    border-radius: 13px;
+    padding: 16px;
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: bold;
     background: var(--tg-theme-button-color, #3985d6);
     color: var(--tg-theme-button-text-color, white);
+    cursor: pointer;
 }
+
 .recipe {
     background: var(--tg-theme-secondary-bg-color, #263442);
-    padding: 18px; border-radius: 16px; margin-top: 15px;
+    padding: 18px;
+    border-radius: 16px;
+    margin-top: 15px;
 }
+
 .hidden { display: none; }
 </style>
 </head>
+
 <body>
 
 <header>
-<h1>👨‍🍳 Домашний Шеф</h1>
-<p>Вкусные блюда из того, что есть дома</p>
+    <h1>👨‍🍳 Домашний Шеф</h1>
+    <p>Вкусные блюда из того, что есть дома</p>
 </header>
 
 <div id="catalog">
-<input class="search" id="search" placeholder="🔎 Найти любимое блюдо...">
-<h2>🍽 Популярные блюда</h2>
-<div class="grid" id="grid"></div>
+    <input class="search" id="search"
+           type="text"
+           placeholder="🔎 Найти любимое блюдо...">
+
+    <h2>🍽 Популярные блюда</h2>
+    <div class="grid" id="grid"></div>
 </div>
 
 <div id="details" class="hidden">
-<button onclick="back()">← Назад к блюдам</button>
-<div class="recipe">
-<h2 id="recipeTitle"></h2>
-<h3>🥕 Ингредиенты</h3>
-<ul id="ingredients"></ul>
-<h3>👨‍🍳 Приготовление</h3>
-<p id="instructions"></p>
-</div>
+    <button id="backButton">← Назад к блюдам</button>
+
+    <div class="recipe">
+        <h2 id="recipeTitle"></h2>
+
+        <h3>🥕 Ингредиенты</h3>
+        <ul id="ingredients"></ul>
+
+        <h3>👨‍🍳 Приготовление</h3>
+        <p id="instructions"></p>
+    </div>
 </div>
 
 <script>
-const tg = window.Telegram?.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
+document.addEventListener("DOMContentLoaded", function () {
 
-const dishes = [
-{
-name: "Курица с картошкой",
-emoji: "🍗",
-time: "45 минут · Просто",
-ingredients: ["Курица — 500 г", "Картофель — 5 шт.", "Лук — 1 шт.", "Соль и специи"],
-steps: "1. Нарежьте курицу и картофель. 2. Добавьте лук, соль и специи. 3. Запекайте при 190°C около 40 минут до готовности."
-},
-{
-name: "Макароны с сыром",
-emoji: "🍝",
-time: "20 минут · Просто",
-ingredients: ["Макароны — 200 г", "Сыр — 100 г", "Молоко — 100 мл", "Соль"],
-steps: "1. Отварите макароны. 2. Добавьте молоко и натёртый сыр. 3. Помешивайте на слабом огне, пока сыр не расплавится."
-},
-{
-name: "Овощной салат",
-emoji: "🥗",
-time: "10 минут · Очень просто",
-ingredients: ["Помидоры — 2 шт.", "Огурцы — 2 шт.", "Зелень", "Масло, соль"],
-steps: "1. Нарежьте овощи. 2. Добавьте зелень. 3. Заправьте маслом и посолите по вкусу."
-},
-{
-name: "Омлет с сыром",
-emoji: "🍳",
-time: "15 минут · Просто",
-ingredients: ["Яйца — 3 шт.", "Молоко — 50 мл", "Сыр — 50 г", "Соль"],
-steps: "1. Взбейте яйца с молоком и солью. 2. Вылейте на сковороду. 3. Добавьте сыр и готовьте под крышкой на слабом огне до полной готовности."
-}
-];
+    const tg = window.Telegram?.WebApp;
 
-const grid = document.getElementById("grid");
+    if (tg) {
+        tg.ready();
+        tg.expand();
+    }
 
-function render(list) {
-    grid.innerHTML = "";
-    list.forEach(dish => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-            <div class="food">${dish.emoji}</div>
-            <h3>${dish.name}</h3>
-            <p>${dish.time}</p>
-        `;
-        card.onclick = () => openRecipe(dish);
-        grid.appendChild(card);
+    const dishes = [
+        {
+            name: "Курица с картошкой",
+            emoji: "🍗",
+            time: "45 минут · Просто",
+            ingredients: [
+                "Курица — 500 г",
+                "Картофель — 5 шт.",
+                "Лук — 1 шт.",
+                "Соль и специи"
+            ],
+            steps: "1. Нарежьте курицу и картофель. 2. Добавьте лук, соль и специи. 3. Запекайте при 190°C около 40 минут до готовности."
+        },
+        {
+            name: "Макароны с сыром",
+            emoji: "🍝",
+            time: "20 минут · Просто",
+            ingredients: [
+                "Макароны — 200 г",
+                "Сыр — 100 г",
+                "Молоко — 100 мл",
+                "Соль"
+            ],
+            steps: "1. Отварите макароны. 2. Добавьте молоко и натёртый сыр. 3. Помешивайте на слабом огне, пока сыр не расплавится."
+        },
+        {
+            name: "Овощной салат",
+            emoji: "🥗",
+            time: "10 минут · Очень просто",
+            ingredients: [
+                "Помидоры — 2 шт.",
+                "Огурцы — 2 шт.",
+                "Зелень",
+                "Масло, соль"
+            ],
+            steps: "1. Нарежьте овощи. 2. Добавьте зелень. 3. Заправьте маслом и посолите по вкусу."
+        },
+        {
+            name: "Омлет с сыром",
+            emoji: "🍳",
+            time: "15 минут · Просто",
+            ingredients: [
+                "Яйца — 3 шт.",
+                "Молоко — 50 мл",
+                "Сыр — 50 г",
+                "Соль"
+            ],
+            steps: "1. Взбейте яйца с молоком и солью. 2. Вылейте на сковороду. 3. Добавьте сыр и готовьте под крышкой на слабом огне до полной готовности."
+        }
+    ];
+
+    const grid = document.getElementById("grid");
+    const catalog = document.getElementById("catalog");
+    const details = document.getElementById("details");
+    const search = document.getElementById("search");
+
+    function render(list) {
+        grid.innerHTML = "";
+
+        list.forEach(function (dish) {
+            const index = dishes.indexOf(dish);
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.dataset.dishIndex = index;
+
+            card.innerHTML = `
+                <div class="food">${dish.emoji}</div>
+                <h3>${dish.name}</h3>
+                <p>${dish.time}</p>
+            `;
+
+            grid.appendChild(card);
+        });
+    }
+
+    function openRecipe(index) {
+        const dish = dishes[index];
+
+        if (!dish) return;
+
+        catalog.classList.add("hidden");
+        details.classList.remove("hidden");
+
+        document.getElementById("recipeTitle").textContent =
+            dish.emoji + " " + dish.name;
+
+        const ingredients = document.getElementById("ingredients");
+        ingredients.innerHTML = "";
+
+        dish.ingredients.forEach(function (item) {
+            const li = document.createElement("li");
+            li.textContent = item;
+            ingredients.appendChild(li);
+        });
+
+        document.getElementById("instructions").textContent =
+            dish.steps;
+
+        if (tg && tg.BackButton) {
+            tg.BackButton.show();
+        }
+    }
+
+    function back() {
+        details.classList.add("hidden");
+        catalog.classList.remove("hidden");
+
+        if (tg && tg.BackButton) {
+            tg.BackButton.hide();
+        }
+    }
+
+    // Один обработчик на все карточки
+    grid.addEventListener("click", function (event) {
+        const card = event.target.closest(".card");
+
+        if (!card || !grid.contains(card)) return;
+
+        const index = Number(card.dataset.dishIndex);
+        openRecipe(index);
     });
-}
 
-function openRecipe(dish) {
-    document.getElementById("catalog").classList.add("hidden");
-    document.getElementById("details").classList.remove("hidden");
-    document.getElementById("recipeTitle").textContent = dish.emoji + " " + dish.name;
-    const list = document.getElementById("ingredients");
-    list.innerHTML = "";
-    dish.ingredients.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        list.appendChild(li);
+    // Кнопка возврата
+    document.getElementById("backButton")
+        .addEventListener("click", back);
+
+    // Кнопка возврата Telegram
+    if (tg && tg.BackButton) {
+        tg.BackButton.onClick(back);
+    }
+
+    // Поиск
+    search.addEventListener("input", function () {
+        const query = search.value.toLowerCase().trim();
+
+        const filtered = dishes.filter(function (dish) {
+            return dish.name.toLowerCase().includes(query);
+        });
+
+        render(filtered);
     });
-    document.getElementById("instructions").textContent = dish.steps;
-    if (tg) tg.BackButton.show();
-}
 
-function back() {
-    document.getElementById("details").classList.add("hidden");
-    document.getElementById("catalog").classList.remove("hidden");
-    if (tg) tg.BackButton.hide();
-}
+    render(dishes);
 
-if (tg) tg.BackButton.onClick(back);
-
-document.getElementById("search").addEventListener("input", event => {
-    const query = event.target.value.toLowerCase();
-    render(dishes.filter(d => d.name.toLowerCase().includes(query)));
 });
-
-render(dishes);
 </script>
+
 </body>
 </html>
