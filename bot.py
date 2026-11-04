@@ -1,5 +1,6 @@
 
 import asyncio
+import json
 import os
 import sqlite3
 
@@ -15,6 +16,7 @@ from aiogram.types import (
     KeyboardButton,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    WebAppInfo,
 )
 from dotenv import load_dotenv
 
@@ -42,6 +44,10 @@ main_keyboard = ReplyKeyboardMarkup(
         [KeyboardButton(text="🥘 Что приготовить?")],
         [KeyboardButton(text="🛒 Список покупок")],
         [KeyboardButton(text="📋 Показать покупки")],
+        [KeyboardButton(
+            text="📱 Открыть приложение",
+            web_app=WebAppInfo(url="https://enot194.github.io/home-chef/")
+        )],
     ],
     resize_keyboard=True
 )
@@ -131,6 +137,31 @@ def add_items_to_db(user_id, items):
                 (user_id, item, item_key)
                 VALUES (?, ?, ?)
             """, (user_id, item, item.lower()))
+
+
+def sync_items_from_webapp(user_id, items):
+    """Replace the user's bot shopping list with items sent from the Mini App."""
+    cleaned = []
+    seen = set()
+
+    for entry in items[:100]:
+        if not isinstance(entry, dict):
+            continue
+        name = str(entry.get("name", "")).strip()[:120]
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        cleaned.append((name, 1 if entry.get("done") else 0))
+
+    with sqlite3.connect(DB_NAME) as conn:
+        conn.execute("DELETE FROM shopping_items WHERE user_id = ?", (user_id,))
+        for name, purchased in cleaned:
+            conn.execute(
+                """INSERT INTO shopping_items
+                   (user_id, item, item_key, purchased)
+                   VALUES (?, ?, ?, ?)""",
+                (user_id, name, name.lower(), purchased)
+            )
 
 
 def get_items_from_db(user_id):
@@ -256,6 +287,31 @@ async def refresh_shopping_message(message: Message, user_id: int):
         reply_markup=make_shopping_keyboard(items),
         parse_mode="HTML"
     )
+
+
+@dp.message(F.web_app_data)
+async def receive_mini_app_data(message: Message):
+    try:
+        payload = json.loads(message.web_app_data.data)
+    except (TypeError, json.JSONDecodeError):
+        await message.answer("Не удалось прочитать данные приложения.")
+        return
+
+    if payload.get("type") != "shopping_sync":
+        await message.answer("Получил данные из приложения.")
+        return
+
+    items = payload.get("items", [])
+    if not isinstance(items, list):
+        await message.answer("Список покупок имеет неверный формат.")
+        return
+
+    sync_items_from_webapp(message.from_user.id, items)
+    await message.answer(
+        "✅ Список покупок из приложения синхронизирован с ботом!",
+        reply_markup=main_keyboard
+    )
+    await show_shopping_list(message)
 
 
 @dp.message(CommandStart())
