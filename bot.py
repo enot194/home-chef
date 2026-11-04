@@ -40,14 +40,14 @@ class ShoppingForm(StatesGroup):
 
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="🍳 Найти рецепт")],
-        [KeyboardButton(text="🥘 Что приготовить?")],
-        [KeyboardButton(text="🛒 Список покупок")],
-        [KeyboardButton(text="📋 Показать покупки")],
         [KeyboardButton(
             text="📱 Открыть приложение",
             web_app=WebAppInfo(url="https://enot194.github.io/home-chef/")
         )],
+        [KeyboardButton(text="🍳 Найти рецепт")],
+        [KeyboardButton(text="🥘 Что приготовить?")],
+        [KeyboardButton(text="🛒 Список покупок")],
+        [KeyboardButton(text="📋 Показать покупки")],
     ],
     resize_keyboard=True
 )
