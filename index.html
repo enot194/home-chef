@@ -30,7 +30,7 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
 </section>
 <section id="detail" class="hidden"></section>
 <section id="favorites" class="hidden"><div class="section-title"><h2>Избранное ❤️</h2></div><div class="grid" id="favoriteList"></div></section>
-<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><div id="shoppingList"></div></section>
+<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><p class="muted">Отправит текущий список покупок в чат с ботом.</p><div id="shoppingList"></div></section>
 <section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
 </main>
 <nav class="tabs">
@@ -82,6 +82,14 @@ $('newItem').addEventListener('keydown',e=>{if(e.key==='Enter')$('addItem').clic
 $('shoppingList').addEventListener('change',e=>{if(e.target.dataset.check!==undefined){shopping[Number(e.target.dataset.check)].done=e.target.checked;save();renderShopping()}});
 $('shoppingList').addEventListener('click',e=>{if(e.target.dataset.delete!==undefined){shopping.splice(Number(e.target.dataset.delete),1);save();renderShopping()}});
 $('clearList').onclick=()=>{if(shopping.length&&confirm('Удалить все продукты из списка?')){shopping=[];save();renderShopping()}};
+$('sendToBot').onclick=()=>{
+ const tg=window.Telegram?.WebApp;
+ if(!tg || typeof tg.sendData!=='function'){
+  alert('Открой приложение через кнопку «📱 Открыть приложение» в чате с ботом, затем повтори отправку.');
+  return;
+ }
+ tg.sendData(JSON.stringify({type:'shopping_sync',items:shopping.map(x=>({name:x.name,done:!!x.done}))}));
+};
 function renderProfile(){const u=window.Telegram?.WebApp?.initDataUnsafe?.user;$('userName').textContent=u?(u.first_name||'Повар')+(u.last_name?' '+u.last_name:''):'Домашний повар';$('favCount').textContent=favorites.length;$('buyCount').textContent=shopping.filter(x=>x.done).length}
 try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}}catch(e){}
 renderRecipes();
