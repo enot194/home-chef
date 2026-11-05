@@ -60,7 +60,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 </div>
 <div class="section-title"><h2>Категории</h2></div>
 <div class="chips" id="categories"></div>
-<details id="recipeCatalog" class="recipe-catalog" open>
+<details id="recipeCatalog" class="recipe-catalog">
  <summary class="section-title"><h2 id="catalogTitle">Что приготовим?</h2><span class="muted" id="count"></span><span class="catalog-toggle" aria-hidden="true">Свернуть</span></summary>
  <div class="grid" id="recipes"></div>
 </details>
@@ -304,14 +304,15 @@ function renderRecommendations(){
  const liked=recipes.filter(r=>favorites.includes(r.id));
  const likedCategories=new Set(liked.map(r=>r.category));
  const likedWords=new Set(liked.flatMap(r=>r.ingredients.join(' ').toLowerCase().match(/[а-яё]{4,}/g)||[]));
- const ranked=recipes.filter(r=>!favorites.includes(r.id)).map(r=>{
+ const ranked=recipes.map(r=>{
   const words=r.ingredients.join(' ').toLowerCase().match(/[а-яё]{4,}/g)||[];
   const overlap=words.filter(w=>likedWords.has(w)).length;
   const score=(likedCategories.has(r.category)?4:0)+overlap*2+(r.time<=25?1:0);
   return {recipe:r,score};
  }).sort((a,b)=>b.score-a.score||a.recipe.time-b.recipe.time);
- const chosen=ranked.slice(0,3);
- $('recommendationHint').textContent=liked.length?'На основе вашего избранного':'Быстрые идеи на каждый день';
+ const slots=['Завтрак','Обед','Ужин','Десерты'];
+ const chosen=slots.map(category=>ranked.find(x=>x.recipe.category===category)).filter(Boolean);
+ $('recommendationHint').textContent='Завтрак · Обед · Ужин · Десерт';
  grid.innerHTML=chosen.map(x=>cardHTML(x.recipe)).join('');
 }
 function renderRecipes(){renderRecommendations();const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
