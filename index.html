@@ -258,13 +258,13 @@ function renderRecipes(){renderRecommendations();const q=$('search').value.toLow
 const recipePhotoMap={
  'Сырный омлет':'photo-1494597706938-de2cd7341979',
  'Овсянка с бананом':'photo-1715098841757-0e9690ec12d6',
- 'Курица с картофелем':'photo-1563131723-e7fbda51c55e',
+ 'Курица с картофелем':'https://images.pexels.com/photos/4589139/pexels-photo-4589139.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Паста с сыром':'photo-1667499989723-c4ab9549d63c',
  'Овощной салат':'photo-1542814880-7e62cf14b7c8',
  'Томатный суп':'photo-1673646961345-045592136147',
  'Сырники':'photo-1756382713817-1105baceb5df',
  'Рис с овощами':'photo-1664717698774-84f62382613b',
- 'Запечённая рыба':'photo-1764150673466-da28d5d5ad5d',
+ 'Запечённая рыба':'https://images.pexels.com/photos/37367757/pexels-photo-37367757/free-photo-of-delicious-baked-fish-with-lemon-and-herbs.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Фруктовый десерт':'photo-1455853828816-0c301a011711',
  'Оладьи':'photo-1705138591117-2aaf6a7e08ae',
  'Куриный суп':'photo-1672667509988-baade9ade083',
@@ -286,6 +286,7 @@ function foodPhotoUrl(query,w=640,h=420){
  const name=String(query||'').trim();
  const recipe=recipes.find(r=>r.name===name);
  let photo=recipe?recipePhotoMap[recipe.name]:null;
+  if(photo&&/^https?:\\/\\//i.test(photo))return photo;
  if(!photo){
   const normalized=name.toLowerCase().replace(/ё/g,'е');
   const match=Object.entries(ingredientPhotoMap).find(([key])=>normalized.includes(key.replace(/ё/g,'е')));
