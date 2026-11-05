@@ -293,7 +293,8 @@ function foodPhotoUrl(query,w=640,h=420){
  }
  return photo?unsplashPhoto(photo,w,h):'';
 }
-function ingredientEmoji(name){const s=String(name||'').toLocaleLowerCase('ru');const rules=[[/яйц/,'🥚'],[/молок|сливк|йогурт|кефир/,'🥛'],[/сыр|фет|творог/,'🧀'],[/куриц/,'🍗'],[/картофел/,'🥔'],[/банан/,'🍌'],[/яблок/,'🍎'],[/ягод/,'🫐'],[/овсян/,'🥣'],[/макарон|паст/,'🍝'],[/рис/,'🍚'],[/рыб/,'🐟'],[/томат|помидор/,'🍅'],[/огур/,'🥒'],[/морков/,'🥕'],[/лук/,'🧅'],[/чеснок/,'🧄'],[/перец/,'🫑'],[/зелень|петруш/,'🌿'],[/масл/,'🫒'],[/мук/,'🌾'],[/фарш/,'🥩'],[/лимон/,'🍋'],[/соль/,'🧂']];const hit=rules.find(([re])=>re.test(s));return hit?hit[1]:'🛒';}\nfunction imageOrEmoji(query,emoji,w=640,h=420){
+function ingredientEmoji(name){const s=String(name||'').toLocaleLowerCase('ru');const rules=[[/яйц/,'🥚'],[/молок|сливк|йогурт|кефир/,'🥛'],[/сыр|фет|творог/,'🧀'],[/куриц/,'🍗'],[/картофел/,'🥔'],[/банан/,'🍌'],[/яблок/,'🍎'],[/ягод/,'🫐'],[/овсян/,'🥣'],[/макарон|паст/,'🍝'],[/рис/,'🍚'],[/рыб/,'🐟'],[/томат|помидор/,'🍅'],[/огур/,'🥒'],[/морков/,'🥕'],[/лук/,'🧅'],[/чеснок/,'🧄'],[/перец/,'🫑'],[/зелень|петруш/,'🌿'],[/масл/,'🫒'],[/мук/,'🌾'],[/фарш/,'🥩'],[/лимон/,'🍋'],[/соль/,'🧂']];const hit=rules.find(([re])=>re.test(s));return hit?hit[1]:'🛒';}
+function imageOrEmoji(query,emoji,w=640,h=420){
  const url=foodPhotoUrl(query,w,h);
  return url?'<img loading="lazy" src="'+url+'" alt="'+escapeHTML(query)+'" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{textContent:'+JSON.stringify(emoji)+'}))">':'<span class="photo-fallback" role="img" aria-label="'+escapeHTML(query)+'">'+emoji+'</span>';
 }
