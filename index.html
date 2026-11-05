@@ -34,12 +34,21 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
 </section>
 <section id="detail" class="hidden"></section>
 <section id="favorites" class="hidden"><div class="section-title"><h2>Избранное ❤️</h2></div><div class="grid" id="favoriteList"></div></section>
+<section id="menu" class="hidden">
+ <div class="section-title"><h2>📅 Меню на неделю</h2></div>
+ <p class="muted">Составь план на 7 дней и добавь все ингредиенты в покупки одним нажатием.</p>
+ <div class="row"><button class="btn" id="generateMenu">✨ Составить меню</button><button class="btn secondary" id="clearMenu">Очистить</button></div>
+ <div id="weeklyMenu"></div>
+ <button class="btn full" id="menuToShopping">🛒 Добавить ингредиенты на неделю в покупки</button>
+ <p id="menuStatus" class="muted" role="status"></p>
+</section>
 <section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
 <section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
 </main>
 <nav class="tabs">
 <button class="tab active" data-tab="home"><b>🏠</b>Главная</button>
 <button class="tab" data-tab="favorites"><b>❤️</b>Избранное</button>
+<button class="tab" data-tab="menu"><b>📅</b>Меню</button>
 <button class="tab" data-tab="shopping"><b>🛒</b>Покупки</button>
 <button class="tab" data-tab="profile"><b>👤</b>Профиль</button>
 </nav>
@@ -66,6 +75,8 @@ let category='Все',currentTab='home';
 const $=id=>document.getElementById(id);
 const get=(key,def)=>{try{return JSON.parse(localStorage.getItem(key))||def}catch{return def}};
 let favorites=get('hc_favorites',[]), shopping=get('hc_shopping',[]);
+let weeklyMenu=get('hc_weekly_menu',Array(7).fill(null));
+if(!Array.isArray(weeklyMenu)||weeklyMenu.length!==7)weeklyMenu=Array(7).fill(null);
 const SUPABASE_URL='https://rmsvfltgweidxykrroxx.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_rPsmbDjDPdfNJVSRid6m_A_KpifTsDl';
 const SUPABASE_FUNCTION=SUPABASE_URL+'/functions/v1/home-chef-sync';
@@ -73,6 +84,7 @@ let cloudReady=false,cloudEnabled=false,cloudTimer=null,cloudRequestRunning=fals
 function save(){
  localStorage.setItem('hc_favorites',JSON.stringify(favorites));
  localStorage.setItem('hc_shopping',JSON.stringify(shopping));
+ localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
  if(cloudReady&&cloudEnabled){
   clearTimeout(cloudTimer);
   cloudTimer=setTimeout(()=>syncShoppingToCloud(),600);
@@ -152,7 +164,7 @@ async function initializeCloudSync(){
   console.error('Облачная синхронизация пока недоступна:',error);
  }
 }
-function showTab(tab){currentTab=tab;['home','detail','favorites','shopping','profile'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='favorites')renderFavorites();if(tab==='home')renderRecommendations();if(tab==='shopping')renderShopping();if(tab==='profile')renderProfile();window.scrollTo(0,0)}
+function showTab(tab){currentTab=tab;['home','detail','favorites','menu','shopping','profile'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='favorites')renderFavorites();if(tab==='menu')renderWeeklyMenu();if(tab==='home')renderRecommendations();if(tab==='shopping')renderShopping();if(tab==='profile')renderProfile();window.scrollTo(0,0)}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 const cats=['Все','Завтрак','Обед','Ужин','Супы','Салаты','Десерты'];
 $('categories').innerHTML=cats.map(c=>'<button class="chip '+(c===category?'active':'')+'" data-cat="'+c+'">'+c+'</button>').join('');
@@ -181,6 +193,47 @@ $('recommendationGrid').addEventListener('click',e=>{const card=e.target.closest
 $('search').addEventListener('input',renderRecipes);
 function renderFavorites(){$('favoriteList').innerHTML=favorites.length?recipes.filter(r=>favorites.includes(r.id)).map(cardHTML).join(''):'<div class="empty">Пока нет избранных рецептов.<br>Нажмите ♡ в карточке блюда.</div>'}
 $('favoriteList').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
+const weekDays=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+function renderWeeklyMenu(){
+ const box=$('weeklyMenu');if(!box)return;
+ box.innerHTML=weekDays.map((day,index)=>{
+  const r=recipes.find(x=>x.id===Number(weeklyMenu[index]));
+  const options='<option value="">Выбрать блюдо…</option>'+recipes.map(x=>'<option value="'+x.id+'" '+(r&&r.id===x.id?'selected':'')+'>'+x.emoji+' '+escapeHTML(x.name)+'</option>').join('');
+  return '<div class="item" style="display:block"><strong>'+day+'</strong><select data-menu-day="'+index+'" style="width:100%;margin-top:8px;padding:11px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--line)">'+options+'</select>'+(r?'<div class="muted" style="margin-top:6px">⏱ '+r.time+' мин · '+r.category+'</div>':'')+'</div>';
+ }).join('');
+}
+$('weeklyMenu').addEventListener('change',e=>{
+ if(e.target.dataset.menuDay===undefined)return;
+ weeklyMenu[Number(e.target.dataset.menuDay)]=e.target.value?Number(e.target.value):null;
+ localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ renderWeeklyMenu();
+});
+$('generateMenu').onclick=()=>{
+ const pool=[...recipes].sort(()=>Math.random()-.5);
+ const preferred=pool.filter(r=>favorites.includes(r.id));
+ const chosen=[...preferred,...pool.filter(r=>!favorites.includes(r.id))];
+ weeklyMenu=Array.from({length:7},(_,i)=>chosen[i%chosen.length].id);
+ localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ renderWeeklyMenu();
+ $('menuStatus').textContent='Меню на 7 дней готово. Можешь заменить любое блюдо вручную.';
+};
+$('clearMenu').onclick=()=>{
+ weeklyMenu=Array(7).fill(null);
+ localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ renderWeeklyMenu();
+ $('menuStatus').textContent='План очищен.';
+};
+$('menuToShopping').onclick=()=>{
+ const planned=recipes.filter(r=>weeklyMenu.includes(r.id));
+ const existing=new Set(shopping.map(x=>x.name.trim().toLocaleLowerCase('ru')));
+ let added=0;
+ planned.forEach(r=>r.ingredients.forEach(name=>{
+  const key=name.trim().toLocaleLowerCase('ru');
+  if(!existing.has(key)){shopping.push({name,done:false});existing.add(key);added++;}
+ }));
+ save();renderShopping();
+ $('menuStatus').textContent=added?'Добавлено '+added+' новых позиций. Повторы исключены.':'Все ингредиенты этих блюд уже есть в списке покупок.';
+};
 function renderShopping(){$('shoppingList').innerHTML=shopping.length?shopping.map((x,i)=>'<div class="item '+(x.done?'done':'')+'"><input type="checkbox" data-check="'+i+'" '+(x.done?'checked':'')+' style="width:20px;height:20px"><span>'+escapeHTML(x.name)+'</span><button class="btn secondary" data-delete="'+i+'">✕</button></div>').join(''):'<div class="empty">Список пока пуст.<br>Добавьте продукты вручную или из рецепта.</div>';$('buyCount').textContent=shopping.filter(x=>x.done).length}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 $('addItem').onclick=()=>{const v=$('newItem').value.trim();if(!v)return;shopping.push({name:v,done:false});$('newItem').value='';save();renderShopping()};
