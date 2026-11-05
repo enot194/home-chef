@@ -235,9 +235,13 @@ $('search').addEventListener('input',renderRecipes);
 function renderFavorites(){$('favoriteList').innerHTML=favorites.length?recipes.filter(r=>favorites.includes(r.id)).map(cardHTML).join(''):'<div class="empty">Пока нет избранных рецептов.<br>Нажмите ♡ в карточке блюда.</div>'}
 $('favoriteList').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
 const weekDays=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
-const defaultRecipeCosts={1:6,2:2.5,3:14,4:7,5:7,6:7,7:8,8:4,9:17,10:5,11:7,12:4,13:11,14:8,15:15,16:3};
-let recipeCosts={...defaultRecipeCosts,...get('hc_recipe_costs',{})};
-const formatMoney=value=>new Intl.NumberFormat('ru-RU',{style:'currency',currency:'PLN',maximumFractionDigits:2}).format(value);
+const defaultRecipeCostsSPB={1:150,2:65,3:350,4:175,5:175,6:175,7:200,8:100,9:425,10:125,11:175,12:100,13:275,14:200,15:375,16:75};
+const defaultRecipeCostsMoscow={1:160,2:70,3:370,4:185,5:185,6:185,7:210,8:105,9:450,10:130,11:185,12:105,13:290,14:210,15:395,16:80};
+let budgetCity=localStorage.getItem('hc_budget_city')||'spb';
+let recipeCostsByCity=get('hc_recipe_costs_ru',{spb:{},moscow:{}});
+const getRecipeCosts=()=>({...((budgetCity==='moscow'?defaultRecipeCostsMoscow:defaultRecipeCostsSPB)),...(recipeCostsByCity[budgetCity]||{})});
+let recipeCosts=getRecipeCosts();
+const formatMoney=value=>new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB',maximumFractionDigits:0}).format(value);
 function renderMenuBudget(){
  const target=$('menuBudget'),editor=$('recipeCostEditor');
  if(!target||!editor)return;
@@ -246,16 +250,23 @@ function renderMenuBudget(){
  },0));
  const meals=weeklyMenu.reduce((n,day)=>n+mealSlots.filter(slot=>day?.[slot.key]).length,0);
  const total=dayTotals.reduce((a,b)=>a+b,0);
- target.innerHTML=meals?'<div style="font-size:27px;font-weight:800;margin:4px 0 2px">'+formatMoney(total)+'</div><div class="muted">Примерно за '+meals+' блюд · '+formatMoney(total/7)+' в среднем за день</div><div style="margin-top:12px">'+dayTotals.map((cost,i)=>'<div class="row" style="padding:5px 0;border-bottom:1px solid var(--line)"><span>'+(weekDays[i])+'</span><strong style="text-align:right">'+(weeklyMenu[i]&&mealSlots.some(slot=>weeklyMenu[i][slot.key])?formatMoney(cost):'—')+'</strong></div>').join('')+'</div>':'<div class="muted">Составьте меню или выберите блюда — здесь появится примерная стоимость недели.</div>';
- editor.innerHTML=recipes.map(r=>'<label class="row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)"><span style="flex:1">'+r.emoji+' '+escapeHTML(r.name)+'</span><input data-recipe-cost="'+r.id+'" type="number" min="0" step="0.5" value="'+Number(recipeCosts[r.id]??0)+'" aria-label="Стоимость '+escapeHTML(r.name)+' в злотых" style="width:95px;flex:0 0 95px;padding:8px"></label>').join('');
+ target.innerHTML='<label style="display:block;margin:8px 0 12px"><strong>Город для расчёта</strong><select id="budgetCity" style="display:block;width:100%;margin-top:6px;padding:11px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--line)"><option value="spb" '+(budgetCity==='spb'?'selected':'')+'>Санкт-Петербург</option><option value="moscow" '+(budgetCity==='moscow'?'selected':'')+'>Москва</option></select></label>'+(meals?'<div style="font-size:27px;font-weight:800;margin:4px 0 2px">'+formatMoney(total)+'</div><div class="muted">Ориентировочно за '+meals+' блюд · '+formatMoney(total/7)+' в среднем за день</div><div style="margin-top:12px">'+dayTotals.map((cost,i)=>'<div class="row" style="padding:5px 0;border-bottom:1px solid var(--line)"><span>'+weekDays[i]+'</span><strong style="text-align:right">'+(weeklyMenu[i]&&mealSlots.some(slot=>weeklyMenu[i][slot.key])?formatMoney(cost):'—')+'</strong></div>').join('')+'</div>':'<div class="muted">Составьте меню или выберите блюда — здесь появится примерная стоимость недели.</div>')+'<div class="muted" style="margin-top:10px;font-size:12px">Расчёт ориентировочный: средние цены продуктов и примерная стоимость ингредиентов на одно блюдо. Реальные цены зависят от магазина, бренда и сезона.</div>';
+ editor.innerHTML=recipes.map(r=>'<label class="row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)"><span style="flex:1">'+r.emoji+' '+escapeHTML(r.name)+'</span><input data-recipe-cost="'+r.id+'" type="number" min="0" step="5" value="'+Number(recipeCosts[r.id]??0)+'" aria-label="Стоимость '+escapeHTML(r.name)+' в рублях" style="width:95px;flex:0 0 95px;padding:8px"> ₽</label>').join('');
+ const citySelect=$('budgetCity');
+ if(citySelect)citySelect.onchange=()=>{
+  budgetCity=citySelect.value;localStorage.setItem('hc_budget_city',budgetCity);
+  recipeCosts=getRecipeCosts();renderMenuBudget();
+ };
 }
 $('recipeCostEditor').addEventListener('change',e=>{
  const id=Number(e.target.dataset.recipeCost);
  if(!id||!recipes.some(r=>r.id===id))return;
  const value=Number(e.target.value);
  if(!Number.isFinite(value)||value<0){e.target.value=recipeCosts[id]??0;return;}
- recipeCosts[id]=Math.round(value*100)/100;
- localStorage.setItem('hc_recipe_costs',JSON.stringify(recipeCosts));
+ recipeCosts[id]=Math.round(value);
+ recipeCostsByCity[budgetCity]=recipeCostsByCity[budgetCity]||{};
+ recipeCostsByCity[budgetCity][id]=recipeCosts[id];
+ localStorage.setItem('hc_recipe_costs_ru',JSON.stringify(recipeCostsByCity));
  renderMenuBudget();
 });
 const mealSlots=[
