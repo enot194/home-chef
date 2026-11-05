@@ -423,6 +423,10 @@ function renderGroceryCatalog(){
 function renderShopping(){
  const prices=currentStorePrices();
  renderGroceryCatalog();
+ // Сначала показываем сам список покупок, а каталог выбора продуктов переносим под ним.
+ const catalogRoot=$('shoppingStoreControls');
+ const shoppingRoot=$('shoppingList');
+ if(catalogRoot&&shoppingRoot)shoppingRoot.insertAdjacentElement('afterend',catalogRoot);
  const active=shopping.map((x,i)=>{
   const key=String(x.name||'').trim().toLocaleLowerCase('ru');
   const base=x.done?null:estimateShoppingItem(x.name);
