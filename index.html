@@ -253,12 +253,16 @@ $('weeklyMenu').addEventListener('change',e=>{
  renderWeeklyMenu();
 });
 $('generateMenu').onclick=()=>{
- const pick=(slot)=>recipes.filter(r=>slot.category?r.category===slot.category:slot.categories.includes(r.category))
-  .sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))||Math.random()-.5);
+ const pickOne=slot=>{
+  const pool=recipes.filter(r=>slot.category?r.category===slot.category:slot.categories.includes(r.category));
+  const liked=pool.filter(r=>favorites.includes(r.id));
+  const candidates=liked.length?liked:pool;
+  return candidates.length?candidates[Math.floor(Math.random()*candidates.length)].id:null;
+ };
  weeklyMenu=Array.from({length:7},()=>({
-  breakfast:pick(mealSlots[0])[Math.floor(Math.random()*pick(mealSlots[0]).length)]?.id??null,
-  lunch:pick(mealSlots[1])[Math.floor(Math.random()*pick(mealSlots[1]).length)]?.id??null,
-  dinner:pick(mealSlots[2])[Math.floor(Math.random()*pick(mealSlots[2]).length)]?.id??null
+  breakfast:pickOne(mealSlots[0]),
+  lunch:pickOne(mealSlots[1]),
+  dinner:pickOne(mealSlots[2])
  }));
  save();renderWeeklyMenu();
  $('menuStatus').textContent='Готово: на каждый день подобраны завтрак, обед и ужин.';
