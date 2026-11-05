@@ -52,7 +52,7 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
   <p class="muted" style="margin:10px 0 0">Расчёт ориентировочный: цены зависят от магазина, сезона и размера порций. Можно изменить любую сумму.</p>
  </div>
 </section>
-<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
+<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><div id="shoppingStoreControls" class="card" style="padding:13px;margin-top:12px"></div><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
 <section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
 </main>
 <nav class="tabs">
@@ -85,7 +85,16 @@ let category='Все',currentTab='home';
 const $=id=>document.getElementById(id);
 const get=(key,def)=>{try{return JSON.parse(localStorage.getItem(key))||def}catch{return def}};
 let favorites=get('hc_favorites',[]), shopping=get('hc_shopping',[]);
-let shoppingPriceOverrides=get('hc_shopping_prices',{});
+let shoppingStores=get('hc_shopping_stores',['Мой магазин']);
+if(!Array.isArray(shoppingStores)||!shoppingStores.length)shoppingStores=['Мой магазин'];
+let currentShoppingStore=get('hc_current_shopping_store',shoppingStores[0]);
+if(!shoppingStores.includes(currentShoppingStore))currentShoppingStore=shoppingStores[0];
+let shoppingPricesByStore=get('hc_shopping_prices_by_store',{});
+if(!shoppingPricesByStore[currentShoppingStore]){
+ shoppingPricesByStore[currentShoppingStore]=get('hc_shopping_prices',{});
+ if(Object.keys(shoppingPricesByStore[currentShoppingStore]).length)localStorage.setItem('hc_shopping_prices_by_store',JSON.stringify(shoppingPricesByStore));
+}
+function currentStorePrices(){return shoppingPricesByStore[currentShoppingStore]||(shoppingPricesByStore[currentShoppingStore]={});}
 const emptyDay=()=>({breakfast:null,lunch:null,dinner:null});
 function normalizeWeeklyMenu(value){
  if(!Array.isArray(value)||value.length!==7)return Array.from({length:7},emptyDay);
@@ -364,10 +373,14 @@ function estimateShoppingItem(raw){
  return Number.isFinite(cost)?cost:null;
 }
 function renderShopping(){
+ const prices=currentStorePrices();
+ $('shoppingStoreControls').innerHTML='<div style="font-weight:700;margin-bottom:8px">🏪 Цены для магазина</div><div class="row"><select id="shoppingStoreSelect" class="search" aria-label="Выбрать магазин">'+shoppingStores.map(s=>'<option value="'+escapeHTML(s)+'" '+(s===currentShoppingStore?'selected':'')+'>'+escapeHTML(s)+'</option>').join('')+'</select><button class="btn secondary" id="addShoppingStore">＋ Магазин</button></div><div class="muted" style="font-size:12px;margin-top:7px">Ручные цены хранятся отдельно для каждого магазина на этом устройстве.</div>';
+ $('shoppingStoreSelect').onchange=e=>{currentShoppingStore=e.target.value;localStorage.setItem('hc_current_shopping_store',JSON.stringify(currentShoppingStore));renderShopping();};
+ $('addShoppingStore').onclick=()=>{const name=prompt('Название магазина:');if(!name||!name.trim())return;const clean=name.trim().slice(0,40);if(shoppingStores.some(s=>s.toLocaleLowerCase('ru')===clean.toLocaleLowerCase('ru'))){alert('Такой магазин уже есть.');return;}shoppingStores.push(clean);currentShoppingStore=clean;localStorage.setItem('hc_shopping_stores',JSON.stringify(shoppingStores));localStorage.setItem('hc_current_shopping_store',JSON.stringify(currentShoppingStore));localStorage.setItem('hc_shopping_prices_by_store',JSON.stringify(shoppingPricesByStore));renderShopping();};
  const active=shopping.map((x,i)=>{
   const key=String(x.name||'').trim().toLocaleLowerCase('ru');
   const base=x.done?null:estimateShoppingItem(x.name);
-  const manual=Object.prototype.hasOwnProperty.call(shoppingPriceOverrides,key)?Number(shoppingPriceOverrides[key]):null;
+  const manual=Object.prototype.hasOwnProperty.call(prices,key)?Number(prices[key]):null;
   return {...x,index:i,key,estimate:x.done?null:(manual!==null&&Number.isFinite(manual)&&manual>=0?manual:base),manual:manual!==null&&Number.isFinite(manual)&&manual>=0};
  });
  const total=active.reduce((sum,x)=>sum+(x.estimate||0),0);
@@ -388,13 +401,13 @@ $('shoppingList').addEventListener('change',e=>{
   if(!item)return;
   const key=String(item.name||'').trim().toLocaleLowerCase('ru');
   const raw=e.target.value.trim();
-  if(raw===''){delete shoppingPriceOverrides[key];}
+  if(raw===''){delete currentStorePrices()[key];}
   else{
    const value=Number(raw);
    if(!Number.isFinite(value)||value<0){alert('Введите цену от 0 рублей.');renderShopping();return;}
-   shoppingPriceOverrides[key]=value;
+   currentStorePrices()[key]=value;
   }
-  localStorage.setItem('hc_shopping_prices',JSON.stringify(shoppingPriceOverrides));
+  localStorage.setItem('hc_shopping_prices_by_store',JSON.stringify(shoppingPricesByStore));
   renderShopping();
  }
 });
