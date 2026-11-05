@@ -256,20 +256,20 @@ function renderRecommendations(){
 function renderRecipes(){renderRecommendations();const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
 const recipePhotoMap={
  'Сырный омлет':'photo-1494597706938-de2cd7341979',
- 'Овсянка с бананом':'photo-1715098841757-0e9690ec12d6',
+ 'Овсянка с бананом':'https://images.pexels.com/photos/35578518/pexels-photo-35578518/free-photo-of-delicious-banana-oatmeal-breakfast-bowl.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Курица с картофелем':'https://images.pexels.com/photos/4589139/pexels-photo-4589139.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Паста с сыром':'photo-1667499989723-c4ab9549d63c',
  'Овощной салат':'photo-1542814880-7e62cf14b7c8',
  'Томатный суп':'photo-1673646961345-045592136147',
- 'Сырники':'photo-1756382713817-1105baceb5df',
+ 'Сырники':'https://images.pexels.com/photos/10254478/pexels-photo-10254478.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Рис с овощами':'photo-1664717698774-84f62382613b',
  'Запечённая рыба':'https://images.pexels.com/photos/37367757/pexels-photo-37367757/free-photo-of-delicious-baked-fish-with-lemon-and-herbs.jpeg?auto=compress&cs=tinysrgb&w=900',
- 'Фруктовый десерт':'photo-1455853828816-0c301a011711',
+ 'Фруктовый десерт':'https://images.pexels.com/photos/8257438/pexels-photo-8257438.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Оладьи':'photo-1705138591117-2aaf6a7e08ae',
- 'Куриный суп':'photo-1672667509988-baade9ade083',
- 'Греческий салат':'photo-1745126010010-da1c6f5300a9',
+ 'Куриный суп':'https://images.pexels.com/photos/34326231/pexels-photo-34326231/free-photo-of-warm-chicken-noodle-soup-in-white-bowl.jpeg?auto=compress&cs=tinysrgb&w=900',
+ 'Греческий салат':'https://images.pexels.com/photos/14016727/pexels-photo-14016727.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Картофельная запеканка':'photo-1750772386927-4bd2547f6fd3',
- 'Банановые панкейки':'photo-1644615928976-f0228a41d7cd'
+ 'Банановые панкейки':'https://images.pexels.com/photos/9428263/pexels-photo-9428263.jpeg?auto=compress&cs=tinysrgb&w=900'
 };
 const ingredientPhotoMap={
 'овсяные хлопья':'photo-1517673132405-a56a62b18caf','молоко':'photo-1517673132405-a56a62b18caf','кефир':'photo-1517673132405-a56a62b18caf',
