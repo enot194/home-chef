@@ -296,7 +296,7 @@ function foodPhotoUrl(query,w=640,h=420){
   const match=Object.entries(ingredientPhotoMap).find(([key])=>normalized.includes(key.replace(/ё/g,'е')));
   photo=match?match[1]:null;
  }
- return photo?unsplashPhoto(photo,w,h):'';
+ return photo?(photo.startsWith('http')?photo:unsplashPhoto(photo,w,h)):'';
 }
 function ingredientEmoji(name){const s=String(name||'').toLocaleLowerCase('ru');const rules=[[/яйц/,'🥚'],[/молок|сливк|йогурт|кефир/,'🥛'],[/сыр|фет|творог/,'🧀'],[/куриц/,'🍗'],[/картофел/,'🥔'],[/банан/,'🍌'],[/яблок/,'🍎'],[/ягод/,'🫐'],[/овсян/,'🥣'],[/макарон|паст/,'🍝'],[/рис/,'🍚'],[/рыб/,'🐟'],[/томат|помидор/,'🍅'],[/огур/,'🥒'],[/морков/,'🥕'],[/лук/,'🧅'],[/чеснок/,'🧄'],[/перец/,'🫑'],[/зелень|петруш/,'🌿'],[/масл/,'🫒'],[/мук/,'🌾'],[/фарш/,'🥩'],[/лимон/,'🍋'],[/соль/,'🧂']];const hit=rules.find(([re])=>re.test(s));return hit?hit[1]:'🛒';}
 function imageOrEmoji(query,emoji,w=640,h=420){
