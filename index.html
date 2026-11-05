@@ -313,7 +313,7 @@ function renderRecommendations(){
  }).sort((a,b)=>b.score-a.score||a.recipe.time-b.recipe.time);
  const slots=['Завтрак','Обед','Ужин','Десерты'];
  const chosen=slots.map(category=>ranked.find(x=>x.recipe.category===category)).filter(Boolean);
- $('recommendationHint').textContent='Завтрак · Обед · Ужин · Десерт';
+ $('recommendationHint').textContent='';
  grid.innerHTML=chosen.map(x=>cardHTML(x.recipe)).join('');
 }
 let recipesExpanded=false;
