@@ -286,7 +286,7 @@ function foodPhotoUrl(query,w=640,h=420){
  const name=String(query||'').trim();
  const recipe=recipes.find(r=>r.name===name);
  let photo=recipe?recipePhotoMap[recipe.name]:null;
-  if(photo&&/^https?:\\/\\//i.test(photo))return photo;
+  if(photo&&photo.startsWith('http'))return photo;
  if(!photo){
   const normalized=name.toLowerCase().replace(/ё/g,'е');
   const match=Object.entries(ingredientPhotoMap).find(([key])=>normalized.includes(key.replace(/ё/g,'е')));
