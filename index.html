@@ -456,7 +456,7 @@ function ingredientEmoji(name){const s=String(name||'').toLocaleLowerCase('ru');
 function imageOrEmoji(query,emoji,w=640,h=420){
  const url=foodPhotoUrl(query,w,h);
  const label=escapeHTML(String(query||'Продукт'));
- const fallback='<span class="photo-fallback photo-missing" role="img" aria-label="Фотография: '+label+'">Фото продукта</span>';
+ const fallback='<span class="photo-fallback photo-missing" aria-hidden="true"></span>';
  return url
   ?'<img loading="lazy" src="'+url+'" alt="'+label+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+fallback.replace('<span ','<span hidden ')
   :fallback;
@@ -523,9 +523,9 @@ async function openExternalRecipe(id,fallbackTitle,fallbackImage){
   const hero=image?'<img src="'+escapeHTML(image)+'" alt="'+escapeHTML(String(title))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback photo-missing" hidden>Фото блюда</span>':'<span class="photo-fallback photo-missing">Фото блюда</span>';
   const ingredientHTML=ingredients.map(item=>{
    const name=externalRecipeValue(item,['name','Name'])||'Продукт';
-   const ingImage=externalImageUrl(externalRecipeValue(item,['image','Image']));
+   const ingImage=externalImageUrl(externalRecipeValue(item,['image','Image']))||foodPhotoUrl(name,160,160);
    const emoji=ingredientEmoji(name);
-   const pic=ingImage?'<img class="ingredient-photo" loading="lazy" src="'+escapeHTML(ingImage)+'" alt="'+escapeHTML(name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback photo-missing ingredient-photo" hidden>Фото продукта</span>':'<span class="photo-fallback photo-missing ingredient-photo">Фото продукта</span>';
+   const pic=ingImage?'<img class="ingredient-photo" loading="lazy" src="'+escapeHTML(ingImage)+'" alt="'+escapeHTML(name)+'" onerror="this.hidden=true">':'';
    return '<div class="ingredient-row">'+pic+'<span>'+escapeHTML(externalIngredientLine(item))+'</span></div>';
   }).join('');
   const stepsHTML=steps.map(step=>'<li>'+escapeHTML(String(step))+'</li>').join('');
