@@ -95,7 +95,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
  </div>
 </section>
 <section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><div id="shoppingStoreControls" class="card" style="padding:13px;margin-top:12px"></div><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
-<section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
+<section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div id="analyticsCard" class="card" style="display:none;padding:16px;margin-top:14px"><div class="section-title" style="margin:0 0 12px"><h2>Статистика приложения</h2></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px"><div><strong id="analyticsTotal" style="font-size:25px">0</strong><div class="muted">Всего посетителей</div></div><div><strong id="analyticsToday" style="font-size:25px">0</strong><div class="muted">Сегодня</div></div><div><strong id="analytics7" style="font-size:25px">0</strong><div class="muted">За 7 дней</div></div><div><strong id="analytics30" style="font-size:25px">0</strong><div class="muted">За 30 дней</div></div><div><strong id="analyticsReturning" style="font-size:25px">0</strong><div class="muted">Возвращались повторно</div></div></div><p class="muted" id="analyticsUpdated" style="margin:12px 0 0">Уникальные пользователи, часовой пояс Москвы.</p></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
 </main>
 <nav class="tabs">
 <button class="tab active" data-tab="home"><b>🏠</b>Главная</button>
@@ -217,6 +217,23 @@ async function cloudRequest(payload){
  if(!response.ok)throw new Error(result.error||('Ошибка облака: '+response.status));
  return result;
 }
+async function loadOwnerAnalytics(){
+ try{
+  await cloudRequest({action:'track_visit'});
+  const stats=await cloudRequest({action:'stats'});
+  if(!stats?.success)return;
+  $('analyticsTotal').textContent=stats.total??0;
+  $('analyticsToday').textContent=stats.today??0;
+  $('analytics7').textContent=stats.last7Days??0;
+  $('analytics30').textContent=stats.last30Days??0;
+  $('analyticsReturning').textContent=stats.returning??0;
+  $('analyticsUpdated').textContent='Обновлено только что · уникальные пользователи по московскому времени.';
+  $('analyticsCard').style.display='block';
+ }catch(error){
+  $('analyticsCard').style.display='none';
+  if(!String(error?.message||error).includes('Forbidden'))console.warn('Статистика пока недоступна:',error);
+ }
+}
 async function syncShoppingToCloud(){
  if(!cloudReady||!cloudEnabled||cloudRequestRunning)return;
  cloudRequestRunning=true;
@@ -253,6 +270,7 @@ async function initializeCloudSync(){
   const result=await cloudRequest({action:'list'});
   if(!result?.success||!Array.isArray(result.items))throw new Error('Не удалось загрузить список покупок');
   cloudEnabled=true;
+   await loadOwnerAnalytics();
   if(result.items.length>0){
    shopping=result.items.map(x=>({name:String(x.name),done:!!x.done}));
    localStorage.setItem('hc_shopping',JSON.stringify(shopping));
