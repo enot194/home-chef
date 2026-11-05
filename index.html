@@ -35,6 +35,16 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 .external-recipe-card .cardbody{padding:11px}
 .external-recipe-card h3{font-size:15px;margin:0 0 7px}
 .external-recipe-card .muted{font-size:12px}
+.external-recipe-card{width:100%;text-align:left;font:inherit;cursor:pointer}
+.external-recipe-card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.external-detail{padding:14px 0 30px}
+.external-detail h2{margin:10px 0 6px}
+.external-detail .detail-photo{border-radius:18px;background:#eee9df}
+.external-detail .recipe-description{margin:10px 0 18px}
+.external-detail .recipe-steps{padding-left:23px}
+.external-detail .recipe-steps li{padding:7px 0}
+.external-source{font-size:11px;color:var(--muted);margin-top:18px}
+
 @media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.photo{height:150px}}
 </style>
 </head>
@@ -336,23 +346,80 @@ function externalRecipeList(payload){
  if(Array.isArray(payload?.data?.recipes))return payload.data.recipes;
  return [];
 }
+function externalImageUrl(value){
+ const raw=String(value||'').trim();
+ if(!raw)return '';
+ try{return new URL(raw,'https://racion.app').href;}catch{return '';}
+}
 function renderExternalRecipes(items){
  const target=$('externalRecipeResults');
  if(!items.length){target.innerHTML='<div class="empty">По этому запросу рецепты не найдены.</div>';return;}
  target.innerHTML=items.map(item=>{
   const id=externalRecipeValue(item,['ID','id','recipeId','recipe_id']);
   const name=externalRecipeValue(item,['Title','title','name','recipeName'])||'Рецепт';
-  const imageUrl=externalRecipeValue(item,['Image','image','imageUrl','image_url','photo','thumbnail','cover'])||recipePhotoMap[String(name).trim()]||'';
+  const imageUrl=externalImageUrl(externalRecipeValue(item,['Image','image','imageUrl','image_url','photo','thumbnail','cover'])||recipePhotoMap[String(name).trim()]||'');
   const time=externalRecipeValue(item,['TimeMin','timeMin','time','timeMinutes','cookingTime','minutes']);
   const kcal=externalRecipeValue(item,['Kcal','kcal','calories','energy']);
   const price=externalRecipeValue(item,['Cost','cost','price','portionPrice']);
-  const href=externalRecipeValue(item,['Href','href','url']);
-  const url=href?(String(href).startsWith('http')?String(href):'https://racion.app'+(String(href).startsWith('/')?String(href):'/'+String(href))):(id?'https://racion.app/recipe/'+encodeURIComponent(id):'https://racion.app/recipes');
   const facts=[time?('⏱ '+time+' мин'):'',kcal?(Math.round(Number(kcal))+' ккал'):'',price?('≈ '+Math.round(Number(price))+' ₽/порция'):''].filter(Boolean).join(' · ');
-  const visual=imageUrl?'<img loading="lazy" src="'+escapeHTML(String(imageUrl))+'" alt="'+escapeHTML(String(name))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" hidden>🍽️</span>':'<span class="photo-fallback">🍽️</span>';
-  return '<a class="card external-recipe-card" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer"><div class="photo">'+visual+'</div><div class="cardbody"><h3>'+escapeHTML(String(name))+'</h3><div class="muted">'+escapeHTML(facts||'Рецепт и ингредиенты')+'</div><div class="muted" style="margin-top:7px;color:var(--accent)">Подробнее ↗</div></div></a>';
+  const visual=imageUrl?'<img loading="lazy" src="'+escapeHTML(imageUrl)+'" alt="'+escapeHTML(String(name))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" hidden>🍽️</span>':'<span class="photo-fallback">🍽️</span>';
+  return '<article class="card external-recipe-card" data-external-recipe="'+escapeHTML(String(id))+'" data-external-title="'+escapeHTML(String(name))+'" data-external-image="'+escapeHTML(imageUrl)+'" role="button" tabindex="0"><div class="photo">'+visual+'</div><div class="cardbody"><h3>'+escapeHTML(String(name))+'</h3><div class="muted">'+escapeHTML(facts||'Рецепт и ингредиенты')+'</div><div class="muted" style="margin-top:7px;color:var(--accent)">Открыть рецепт в приложении</div></div></article>';
  }).join('');
 }
+function externalIngredientLine(item){
+ const name=externalRecipeValue(item,['name','Name','title'])||'Продукт';
+ const amount=externalRecipeValue(item,['amount','Amount']);
+ const unit=externalRecipeValue(item,['unit','Unit']);
+ return String(name)+(amount!==''?' — '+amount+(unit?' '+unit:''):'');
+}
+async function openExternalRecipe(id,fallbackTitle,fallbackImage){
+ if(!id)return;
+ showTab('detail');
+ $('detail').innerHTML='<button class="btn secondary back" id="externalBack">← Назад к рецептам</button><div class="empty" style="margin-top:20px">Загружаю рецепт…</div>';
+ $('externalBack').onclick=()=>showTab('home');
+ try{
+  const response=await fetch('https://racion.app/api/recipes/'+encodeURIComponent(id)+'?country=RU&lang=ru',{headers:{Accept:'application/json'}});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  const data=await response.json();
+  const title=externalRecipeValue(data,['title','Title'])||fallbackTitle||'Рецепт';
+  const image=externalImageUrl(externalRecipeValue(data,['image','Image'])||fallbackImage||recipePhotoMap[String(title).trim()]||'');
+  const description=externalRecipeValue(data,['description','Description']);
+  const steps=externalRecipeValue(data,['steps','Steps'])||[];
+  const ingredients=externalRecipeValue(data,['ingredients','Ingredients'])||[];
+  const time=externalRecipeValue(data,['timeMin','TimeMin']);
+  const kcal=externalRecipeValue(data,['kcal','Kcal']);
+  const price=externalRecipeValue(data,['cost','Cost']);
+  const hero=image?'<img src="'+escapeHTML(image)+'" alt="'+escapeHTML(String(title))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" hidden>🍽️</span>':'<span class="photo-fallback">🍽️</span>';
+  const ingredientHTML=ingredients.map(item=>{
+   const name=externalRecipeValue(item,['name','Name'])||'Продукт';
+   const ingImage=externalImageUrl(externalRecipeValue(item,['image','Image']));
+   const emoji=ingredientEmoji(name);
+   const pic=ingImage?'<img class="ingredient-photo" loading="lazy" src="'+escapeHTML(ingImage)+'" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback ingredient-photo" hidden>'+emoji+'</span>':'<span class="photo-fallback ingredient-photo">'+emoji+'</span>';
+   return '<div class="ingredient-row">'+pic+'<span>'+escapeHTML(externalIngredientLine(item))+'</span></div>';
+  }).join('');
+  const stepsHTML=steps.map(step=>'<li>'+escapeHTML(String(step))+'</li>').join('');
+  $('detail').innerHTML='<button class="btn secondary back" id="externalBack">← Назад к рецептам</button><div class="external-detail"><div class="detail-photo">'+hero+'</div><h2>'+escapeHTML(String(title))+'</h2><p class="muted">'+[time?'⏱ '+time+' мин':'',kcal?Math.round(Number(kcal))+' ккал':'',price?'≈ '+Math.round(Number(price))+' ₽/порция':''].filter(Boolean).join(' · ')+'</p>'+(description?'<p class="recipe-description">'+escapeHTML(String(description))+'</p>':'')+'<div class="section-title"><h2>Ингредиенты</h2></div><div class="ingredients">'+(ingredientHTML||'<p class="muted">Список ингредиентов не предоставлен.</p>')+'</div><button class="btn full" id="externalAddShopping" '+(!ingredients.length?'disabled':'')+'>＋ Добавить ингредиенты в покупки</button><div class="section-title"><h2>Приготовление</h2></div>'+(stepsHTML?'<ol class="recipe-steps">'+stepsHTML+'</ol>':'<p class="muted">Шаги приготовления не предоставлены.</p>')+'<p class="external-source">Рецепт и данные предоставлены сервисом «Рацион».</p></div>';
+  $('externalBack').onclick=()=>showTab('home');
+  $('externalAddShopping').onclick=()=>{
+   const added=ingredients.map(item=>{const name=externalIngredientLine(item);const key=name.trim().toLocaleLowerCase('ru');const existing=shopping.find(x=>String(x.name||'').trim().toLocaleLowerCase('ru')===key);return existing?{...existing,source:'recipe',recipeName:title}:{name,done:false,source:'recipe',recipeName:title};});
+   const keys=new Set(added.map(x=>String(x.name||'').trim().toLocaleLowerCase('ru')));
+   shopping=[...added,...shopping.filter(x=>!keys.has(String(x.name||'').trim().toLocaleLowerCase('ru')))];save();renderShopping();$('externalAddShopping').textContent='✓ Добавлено в покупки';
+  };
+  window.scrollTo(0,0);
+ }catch(error){
+  $('detail').innerHTML='<button class="btn secondary back" id="externalBack">← Назад к рецептам</button><div class="empty" style="margin-top:20px">Не удалось загрузить рецепт. Проверьте соединение и попробуйте ещё раз.</div>';
+  $('externalBack').onclick=()=>showTab('home');
+  console.warn('Racion recipe detail error:',error);
+ }
+}
+$('externalRecipeResults').addEventListener('click',e=>{
+ const card=e.target.closest('[data-external-recipe]');
+ if(card)openExternalRecipe(card.dataset.externalRecipe,card.dataset.externalTitle,card.dataset.externalImage);
+});
+$('externalRecipeResults').addEventListener('keydown',e=>{
+ const card=e.target.closest('[data-external-recipe]');
+ if(card&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openExternalRecipe(card.dataset.externalRecipe,card.dataset.externalTitle,card.dataset.externalImage);}
+});
 async function searchExternalRecipes(){
  const input=$('externalRecipeSearch');
  const status=$('externalRecipeStatus');
