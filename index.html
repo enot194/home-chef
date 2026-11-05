@@ -321,7 +321,56 @@ $('menuToShopping').onclick=()=>{
  save();renderShopping();
  $('menuStatus').textContent=added?'Добавлено '+added+' новых позиций. Повторы исключены.':'Все ингредиенты этих блюд уже есть в списке покупок.';
 };
-function renderShopping(){$('shoppingList').innerHTML=shopping.length?shopping.map((x,i)=>'<div class="item '+(x.done?'done':'')+'"><input type="checkbox" data-check="'+i+'" '+(x.done?'checked':'')+' style="width:20px;height:20px"><span>'+escapeHTML(x.name)+'</span><button class="btn secondary" data-delete="'+i+'">✕</button></div>').join(''):'<div class="empty">Список пока пуст.<br>Добавьте продукты вручную или из рецепта.</div>';$('buyCount').textContent=shopping.filter(x=>x.done).length}
+const groceryPrices={
+ 'яйца':{kg:0,each:10.14},'яйцо':{kg:0,each:10.14},
+ 'молоко':{kg:98,unit:'ml'},'сыр':{kg:940},'овсяные хлопья':{kg:174},'банан':{kg:180,each:27},
+ 'мёд':{kg:700},'мед':{kg:700},'курица':{kg:267},'картофель':{kg:53,each:8},'лук':{kg:53,each:8},
+ 'макароны':{kg:130},'сливки':{kg:358,unit:'ml'},'помидоры':{kg:180,each:27},'томаты':{kg:180},
+ 'огурец':{kg:180,each:27},'огурцы':{kg:180},'чеснок':{kg:400,each:12},'творог':{kg:474},
+ 'мука':{kg:67},'сахар':{kg:86},'рис':{kg:124},'морковь':{kg:70,each:11},'перец':{kg:250,each:38},
+ 'филе рыбы':{kg:379},'рыба':{kg:379},'лимон':{kg:200,each:30},'яблоко':{kg:158,each:24},
+ 'йогурт':{kg:320},'ягоды':{kg:500},'гречка':{kg:89},'шампиньоны':{kg:350},'кефир':{kg:148,unit:'ml'},
+ 'вермишель':{kg:140},'фарш':{kg:573},'фета':{kg:940}
+};
+function estimateShoppingItem(raw){
+ const text=String(raw||'').toLocaleLowerCase('ru').trim();
+ const split=text.split(/[—–-]/);
+ if(split.length<2)return null;
+ const name=split[0].trim(), amount=split.slice(1).join(' ').trim();
+ const match=amount.match(/(\d+(?:[.,]\d+)?|½|¼)\s*(кг|г|мл|л|шт\.?|ст\.\s*л\.?|ч\.\s*л\.?)/i);
+ if(!match)return null;
+ let qty=match[1]==='½'?0.5:match[1]==='¼'?0.25:Number(match[1].replace(',','.'));
+ const unit=match[2].toLowerCase().replace(/\s/g,'');
+ if(!Number.isFinite(qty)||qty<=0)return null;
+ let key=Object.keys(groceryPrices).sort((a,b)=>b.length-a.length).find(k=>name.includes(k));
+ if(!key && /яйц/.test(name))key='яйца';
+ if(!key && /масло/.test(name) && !/сливоч/.test(name))return null;
+ if(!key)return null;
+ const price=groceryPrices[key];
+ let cost;
+ if(unit.startsWith('шт')){
+  if(price.each)cost=qty*price.each;
+  else if(/яйц/.test(key))cost=qty*10.14;
+  else if(price.kg)cost=qty*price.kg*0.15;
+ }else if(unit.startsWith('кг'))cost=qty*price.kg;
+ else if(unit==='г')cost=qty*price.kg/1000;
+ else if(unit==='л')cost=qty*price.kg;
+ else if(unit==='мл')cost=qty*price.kg/1000;
+ else if(unit.startsWith('ст.л')){
+  const grams=/мука/.test(key)?8:/сахар/.test(key)?12:15;
+  cost=qty*(unit.includes('ст')?grams:5)*price.kg/1000;
+ }else if(unit.startsWith('ч.л'))cost=qty*5*price.kg/1000;
+ return Number.isFinite(cost)?cost:null;
+}
+function renderShopping(){
+ const active=shopping.map((x,i)=>({...x,index:i,estimate:x.done?null:estimateShoppingItem(x.name)}));
+ const total=active.reduce((sum,x)=>sum+(x.estimate||0),0);
+ const priced=active.filter(x=>x.estimate!==null).length;
+ const unknown=active.filter(x=>!x.done&&x.estimate===null).length;
+ const summary=shopping.length?'<div class="card" style="padding:14px;margin:12px 0"><div class="muted">Примерная стоимость оставшихся покупок</div><div style="font-size:25px;font-weight:750;margin:4px 0">'+Math.round(total*.95).toLocaleString('ru-RU')+'–'+Math.round(total*1.05).toLocaleString('ru-RU')+' ₽</div><div class="muted">Оценено '+priced+' из '+active.filter(x=>!x.done).length+' позиций'+(unknown?' · не удалось оценить: '+unknown:'')+'</div><div class="muted" style="font-size:12px;margin-top:6px">Ориентир по средним ценам продуктов в России. Неизвестные позиции и продукты без количества не включены; фактическая цена зависит от магазина.</div></div>':'';
+ $('shoppingList').innerHTML=summary+(shopping.length?active.map(x=>'<div class="item '+(x.done?'done':'')+'"><input type="checkbox" data-check="'+x.index+'" '+(x.done?'checked':'')+' style="width:20px;height:20px"><span style="flex:1">'+escapeHTML(x.name)+(x.estimate!==null&&!x.done?'<small class="muted" style="display:block">'+Math.round(x.estimate)+' ₽ примерно</small>':'')+'</span><button class="btn secondary" data-delete="'+x.index+'">✕</button></div>').join(''):'<div class="empty">Список пока пуст.<br>Добавьте продукты вручную или из рецепта.</div>');
+ $('buyCount').textContent=shopping.filter(x=>x.done).length;
+}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 $('addItem').onclick=()=>{const v=$('newItem').value.trim();if(!v)return;shopping.push({name:v,done:false});$('newItem').value='';save();renderShopping()};
 $('newItem').addEventListener('keydown',e=>{if(e.key==='Enter')$('addItem').click()});
