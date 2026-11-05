@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101820">
+<meta name="theme-color" content="#f7f3eb">
 <title>Домашний Шеф</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>\n:root{--bg:#f7f3eb;--panel:#fffdf8;--text:#343b30;--muted:#858879;--accent:#78845b;--line:#e9e3d7;--warm:#e8b28b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 0 calc(88px + env(safe-area-inset-bottom))}
+<style>
+:root{color-scheme:light;--bg:#f7f3eb;--panel:#fffdf8;--text:#343b30;--muted:#858879;--accent:#78845b;--line:#e9e3d7;--warm:#e8b28b}
+*{box-sizing:border-box}html,body{background:#f7f3eb!important;color:#343b30!important}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 0 calc(88px + env(safe-area-inset-bottom))}
 header{padding:30px 20px 26px;background:linear-gradient(145deg,#e9dfca,#f3e8d7 58%,#dfe4d2);border-radius:0 0 30px 30px;color:#384333;position:relative;overflow:hidden}
 header:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-65px;top:-85px;background:rgba(255,255,255,.25)}
 h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{margin:0;color:#68705d;max-width:290px}
@@ -20,7 +21,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 .photo{height:148px;display:grid;place-items:center;font-size:48px;background:#ece8dc;overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover;display:block}
 .detail-photo{height:230px;padding:0;overflow:hidden}.detail-photo img{width:100%;height:100%;object-fit:cover}
 .ingredient-photo{width:58px;height:58px;flex:0 0 58px;border-radius:13px;object-fit:cover;background:#eee9de}.ingredient-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.ingredient-row span{flex:1}
-.cardbody{padding:13px}.card h3{font-size:15px;margin:0 0 5px;line-height:1.35}.muted{color:var(--muted);font-size:13px}
+.cardbody{display:block!important;padding:13px 13px 15px;background:#fffdf8!important;color:#343b30!important;min-height:72px}.card h3{display:block!important;color:#343b30!important;visibility:visible!important;opacity:1!important}.card h3{font-size:15px;margin:0 0 5px;line-height:1.35}.muted{color:var(--muted);font-size:13px}
 .btn{border:0;border-radius:14px;background:#78845b;color:white;font-weight:650;padding:12px 15px;font:inherit;cursor:pointer}.btn.secondary{background:#f0eee5;color:#5e674e;border:1px solid #e5e1d5}.btn.full{width:100%;margin-top:10px}
 .row{display:flex;gap:9px;align-items:center}.row>*{flex:1}.hidden{display:none!important}
 .detail-photo{font-size:76px;text-align:center;padding:28px;background:#eee9de;border-radius:21px}.detail h2{margin-bottom:4px}.ingredients{padding-left:20px}.ingredients li{padding:5px 0}
@@ -28,7 +29,8 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 .tabs{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:rgba(255,253,248,.96);backdrop-filter:blur(16px);border-top:1px solid #e9e3d7;padding:10px 5px calc(10px + env(safe-area-inset-bottom));z-index:5}
 .tab{background:none;border:0;color:#929483;font:12px system-ui;display:grid;gap:3px;justify-items:center;min-width:55px}.tab b{font-size:20px;font-weight:400}.tab.active{color:#68764d}
 .empty{text-align:center;padding:30px 12px;color:var(--muted)}.back{margin:0 0 12px}
-@media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.photo{height:150px}}\n</style>
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.photo{height:150px}}
+</style>
 </head>
 <body>
 <header><h1>👨‍🍳 Домашний Шеф</h1><p>Вкусные идеи, простые рецепты и покупки без суеты</p></header>
@@ -75,6 +77,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 <button class="tab" data-tab="profile"><b>👤</b>Профиль</button>
 </nav>
 <script>
+try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();tg.setBackgroundColor?.("#f7f3eb");tg.setHeaderColor?.("#e9dfca");}}catch(e){console.warn("Telegram theme setup:",e)}
 const recipes=[
 {id:1,name:'Сырный омлет',emoji:'🍳',category:'Завтрак',time:15,desc:'Нежный омлет с сыром на каждый день.',ingredients:['Яйца — 3 шт.','Молоко — 50 мл','Сыр — 50 г','Соль — по вкусу'],steps:['Взбейте яйца с молоком и солью.','Вылейте смесь на разогретую сковороду.','Добавьте сыр и готовьте под крышкой 5–7 минут.']},
 {id:2,name:'Овсянка с бананом',emoji:'🥣',category:'Завтрак',time:10,desc:'Быстрый и сытный завтрак.',ingredients:['Овсяные хлопья — 50 г','Молоко или вода — 200 мл','Банан — 1 шт.','Мёд — по желанию'],steps:['Залейте хлопья молоком или водой.','Варите 5–7 минут, помешивая.','Добавьте нарезанный банан и мёд.']},
