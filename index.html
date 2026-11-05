@@ -30,7 +30,7 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
 </section>
 <section id="detail" class="hidden"></section>
 <section id="favorites" class="hidden"><div class="section-title"><h2>Избранное ❤️</h2></div><div class="grid" id="favoriteList"></div></section>
-<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><p class="muted">Отправит текущий список покупок в чат с ботом.</p><div id="shoppingList"></div></section>
+<section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
 <section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
 </main>
 <nav class="tabs">
@@ -74,9 +74,10 @@ function save(){
   cloudTimer=setTimeout(()=>syncShoppingToCloud(),600);
  }
 }
+function setCloudStatus(message){const el=$('cloudStatus');if(el)el.textContent=message;}
 async function cloudRequest(payload){
  const tg=window.Telegram?.WebApp;
- if(!tg?.initData)return null;
+ if(!tg?.initData)throw new Error('Telegram не передал данные авторизации. Закрой приложение и открой его кнопкой в чате с ботом.');
  const response=await fetch(SUPABASE_FUNCTION,{
   method:'POST',
   headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
@@ -99,7 +100,8 @@ async function syncShoppingToCloud(){
 }
 async function initializeCloudSync(){
  const tg=window.Telegram?.WebApp;
- if(!tg?.initData)return;
+ if(!tg?.initData){setCloudStatus('Облако не подключено: Telegram не передал данные авторизации. Открой приложение кнопкой в чате с ботом.');return;}
+ setCloudStatus('Подключаемся к облаку…');
  try{
   const result=await cloudRequest({action:'list'});
   if(!result?.success||!Array.isArray(result.items))throw new Error('Не удалось загрузить список');
@@ -112,10 +114,12 @@ async function initializeCloudSync(){
   }
   cloudReady=true;
   if(currentTab==='shopping')renderShopping();
+  setCloudStatus('☁️ Облако подключено. Список покупок синхронизируется автоматически.');
   console.log('Облачная синхронизация включена');
  }catch(error){
   cloudReady=false;
   cloudEnabled=false;
+  setCloudStatus('Ошибка подключения к облаку: '+(error?.message||String(error)));
   console.error('Облачная синхронизация пока недоступна:',error);
  }
 }
