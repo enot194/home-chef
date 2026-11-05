@@ -42,7 +42,7 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
 <script>
 const recipes=[
 {id:1,name:'Сырный омлет',emoji:'🍳',category:'Завтрак',time:15,desc:'Нежный омлет с сыром на каждый день.',ingredients:['Яйца — 3 шт.','Молоко — 50 мл','Сыр — 50 г','Соль — по вкусу'],steps:['Взбейте яйца с молоком и солью.','Вылейте смесь на разогретую сковороду.','Добавьте сыр и готовьте под крышкой 5–7 минут.']},
-{id:2,name:'Овсянка с бананом',emoji:'🥣',category:'Завтрак',time:10,desc:'Быстрый и сытный завтрак.',ingredients:['Овсяные хлопья —  כמו 50 г','Молоко или вода — 200 мл','Банан — 1 шт.','Мёд — по желанию'],steps:['Залейте хлопья молоком или водой.','Варите 5–7 минут, помешивая.','Добавьте нарезанный банан и мёд.']},
+{id:2,name:'Овсянка с бананом',emoji:'🥣',category:'Завтрак',time:10,desc:'Быстрый и сытный завтрак.',ingredients:['Овсяные хлопья — 50 г','Молоко или вода — 200 мл','Банан — 1 шт.','Мёд — по желанию'],steps:['Залейте хлопья молоком или водой.','Варите 5–7 минут, помешивая.','Добавьте нарезанный банан и мёд.']},
 {id:3,name:'Курица с картофелем',emoji:'🍗',category:'Ужин',time:45,desc:'Домашнее блюдо из доступных продуктов.',ingredients:['Курица — 400 г','Картофель — 500 г','Лук — 1 шт.','Масло, соль, специи'],steps:['Нарежьте картофель и лук.','Выложите всё в форму, добавьте курицу и специи.','Запекайте при 190°C около 35–40 минут до готовности.']},
 {id:4,name:'Паста с сыром',emoji:'🍝',category:'Обед',time:20,desc:'Простая сливочная паста.',ingredients:['Макароны — 200 г','Сыр — 80 г','Сливки — 100 мл','Соль, перец'],steps:['Отварите макароны.','Нагрейте сливки, добавьте тёртый сыр.','Смешайте соус с макаронами.']},
 {id:5,name:'Овощной салат',emoji:'🥗',category:'Салаты',time:10,desc:'Свежий салат к обеду или ужину.',ingredients:['Помидоры — 2 шт.','Огурец — 1 шт.','Зелень','Масло, соль'],steps:['Нарежьте овощи.','Добавьте зелень, масло и соль.','Перемешайте и подавайте.']},
@@ -62,7 +62,63 @@ let category='Все',currentTab='home';
 const $=id=>document.getElementById(id);
 const get=(key,def)=>{try{return JSON.parse(localStorage.getItem(key))||def}catch{return def}};
 let favorites=get('hc_favorites',[]), shopping=get('hc_shopping',[]);
-function save(){localStorage.setItem('hc_favorites',JSON.stringify(favorites));localStorage.setItem('hc_shopping',JSON.stringify(shopping))}
+const SUPABASE_URL='https://rmsvfltgweidxykrroxx.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_rPsmbDjDPdfNJVSRid6m_A_KpifTsDl';
+const SUPABASE_FUNCTION=SUPABASE_URL+'/functions/v1/home-chef-sync';
+let cloudReady=false,cloudEnabled=false,cloudTimer=null,cloudRequestRunning=false;
+function save(){
+ localStorage.setItem('hc_favorites',JSON.stringify(favorites));
+ localStorage.setItem('hc_shopping',JSON.stringify(shopping));
+ if(cloudReady&&cloudEnabled){
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(()=>syncShoppingToCloud(),600);
+ }
+}
+async function cloudRequest(payload){
+ const tg=window.Telegram?.WebApp;
+ if(!tg?.initData)return null;
+ const response=await fetch(SUPABASE_FUNCTION,{
+  method:'POST',
+  headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+  body:JSON.stringify({...payload,initData:tg.initData})
+ });
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(result.error||('Ошибка облака: '+response.status));
+ return result;
+}
+async function syncShoppingToCloud(){
+ if(!cloudReady||!cloudEnabled||cloudRequestRunning)return;
+ cloudRequestRunning=true;
+ try{
+  await cloudRequest({items:shopping.map(x=>({name:x.name,done:!!x.done}))});
+ }catch(error){
+  console.error('Не удалось сохранить список в облаке:',error);
+ }finally{
+  cloudRequestRunning=false;
+ }
+}
+async function initializeCloudSync(){
+ const tg=window.Telegram?.WebApp;
+ if(!tg?.initData)return;
+ try{
+  const result=await cloudRequest({action:'list'});
+  if(!result?.success||!Array.isArray(result.items))throw new Error('Не удалось загрузить список');
+  cloudEnabled=true;
+  if(result.items.length>0){
+   shopping=result.items.map(x=>({name:String(x.name),done:!!x.done}));
+   localStorage.setItem('hc_shopping',JSON.stringify(shopping));
+  }else if(shopping.length>0){
+   await cloudRequest({items:shopping.map(x=>({name:x.name,done:!!x.done}))});
+  }
+  cloudReady=true;
+  if(currentTab==='shopping')renderShopping();
+  console.log('Облачная синхронизация включена');
+ }catch(error){
+  cloudReady=false;
+  cloudEnabled=false;
+  console.error('Облачная синхронизация пока недоступна:',error);
+ }
+}
 function showTab(tab){currentTab=tab;['home','detail','favorites','shopping','profile'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='favorites')renderFavorites();if(tab==='shopping')renderShopping();if(tab==='profile')renderProfile();window.scrollTo(0,0)}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 const cats=['Все','Завтрак','Обед','Ужин','Супы','Салаты','Десерты'];
@@ -93,5 +149,6 @@ $('sendToBot').onclick=()=>{
 function renderProfile(){const u=window.Telegram?.WebApp?.initDataUnsafe?.user;$('userName').textContent=u?(u.first_name||'Повар')+(u.last_name?' '+u.last_name:''):'Домашний повар';$('favCount').textContent=favorites.length;$('buyCount').textContent=shopping.filter(x=>x.done).length}
 try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}}catch(e){}
 renderRecipes();
+initializeCloudSync();
 </script>
 </body></html>
