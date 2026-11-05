@@ -240,18 +240,49 @@ function renderRecommendations(){
  grid.innerHTML=chosen.map(x=>cardHTML(x.recipe)).join('');
 }
 function renderRecipes(){renderRecommendations();const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
-const foodPhotoMap=[
-'photo-1525351484163-7529414344d8','photo-1517673132405-a56a62b18caf','photo-1532550907401-a500c9a57435','photo-1473093295043-cdd812d0e601',
-'photo-1512621776951-a57141f2eefd','photo-1547592166-23ac45744acd','photo-1578985545062-69928b1d9587','photo-1512058564366-18510be2db19',
-'photo-1515003197210-e0cd7184f8b5','photo-1490645935967-10de6ba17061','photo-1504545102780-26774c1bb073','photo-1490645935967-10de6ba17061'
-].filter(Boolean);
+const recipePhotoMap={
+'Сырный омлет':'photo-1525351484163-7529414344d8',
+'Овсянка с бананом':'photo-1517673132405-a56a62b18caf',
+'Курица с картофелем':'photo-1532550907401-a500c9a57435',
+'Паста с сыром':'photo-1473093295043-cdd812d0e601',
+'Овощной салат':'photo-1512621776951-a57141f2eefd',
+'Томатный суп':'photo-1547592166-23ac45744acd',
+'Сырники':'photo-1525351484163-7529414344d8',
+'Рис с овощами':'photo-1512058564366-18510be2db19',
+'Запечённая рыба':'photo-1519708227418-c8fd9a32b7a2',
+'Фруктовый десерт':'photo-1490645935967-10de6ba17061',
+'Гречка с грибами':'photo-1504545102780-26774c1bb073',
+'Оладьи':'photo-1525351484163-7529414344d8',
+'Куриный суп':'photo-1547592166-23ac45744acd',
+'Греческий салат':'photo-1512621776951-a57141f2eefd',
+'Картофельная запеканка':'photo-1512058564366-18510be2db19',
+'Банановые панкейки':'photo-1525351484163-7529414344d8'
+};
+const ingredientPhotoMap={
+'овсяные хлопья':'photo-1517673132405-a56a62b18caf','молоко':'photo-1517673132405-a56a62b18caf','кефир':'photo-1517673132405-a56a62b18caf',
+'банан':'photo-1490645935967-10de6ba17061','яблоко':'photo-1490645935967-10de6ba17061','ягоды':'photo-1490645935967-10de6ba17061','йогурт':'photo-1490645935967-10de6ba17061',
+'курица':'photo-1532550907401-a500c9a57435','картофель':'photo-1512058564366-18510be2db19','макароны':'photo-1473093295043-cdd812d0e601',
+'помидоры':'photo-1512621776951-a57141f2eefd','огурец':'photo-1512621776951-a57141f2eefd','томаты':'photo-1547592166-23ac45744acd',
+'творог':'photo-1525351484163-7529414344d8','рис':'photo-1512058564366-18510be2db19','филе рыбы':'photo-1519708227418-c8fd9a32b7a2',
+'гречка':'photo-1504545102780-26774c1bb073','шампиньоны':'photo-1504545102780-26774c1bb073','морковь':'photo-1512621776951-a57141f2eefd',
+'фета':'photo-1512621776951-a57141f2eefd','фарш':'photo-1532550907401-a500c9a57435','яйца':'photo-1525351484163-7529414344d8'
+};
 function unsplashPhoto(id,w,h){return 'https://images.unsplash.com/'+id+'?auto=format&fit=crop&w='+w+'&h='+h+'&q=80'}
 function foodPhotoUrl(query,w=640,h=420){
- const recipe=recipes.find(r=>r.name===query);
- const index=recipe?Math.max(0,recipe.id-1)%foodPhotoMap.length:Math.abs(String(query).split('').reduce((a,ch)=>a+ch.charCodeAt(0),0))%foodPhotoMap.length;
- return unsplashPhoto(foodPhotoMap[index],w,h);
+ const name=String(query||'').trim();
+ const recipe=recipes.find(r=>r.name===name);
+ let photo=recipe?recipePhotoMap[recipe.name]:null;
+ if(!photo){
+  const normalized=name.toLowerCase().replace(/ё/g,'е');
+  const match=Object.entries(ingredientPhotoMap).find(([key])=>normalized.includes(key.replace(/ё/g,'е')));
+  photo=match?match[1]:null;
+ }
+ return photo?unsplashPhoto(photo,w,h):'';
 }
-function imageOrEmoji(query,emoji,w=640,h=420){return '<img loading="lazy" src="'+foodPhotoUrl(query,w,h)+'" alt="'+escapeHTML(query)+'" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{textContent:'+JSON.stringify(emoji)+'}))">'}
+function imageOrEmoji(query,emoji,w=640,h=420){
+ const url=foodPhotoUrl(query,w,h);
+ return url?'<img loading="lazy" src="'+url+'" alt="'+escapeHTML(query)+'" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{textContent:'+JSON.stringify(emoji)+'}))">':'<span class="photo-fallback" role="img" aria-label="'+escapeHTML(query)+'">'+emoji+'</span>';
+}
 function cardHTML(r){return '<article class="card" data-recipe="'+r.id+'"><div class="photo">'+imageOrEmoji(r.name,r.emoji,640,420)+'</div><div class="cardbody"><h3>'+escapeHTML(r.name)+'</h3><div class="muted">⏱ '+r.time+' мин · '+escapeHTML(r.category)+'</div></div></article>'}
 function openRecipe(id){const r=recipes.find(x=>x.id===Number(id));if(!r)return;$('detail').innerHTML='<button class="btn secondary back" id="back">← Назад</button><div class="detail-photo">'+imageOrEmoji(r.name,r.emoji,900,520)+'</div><div class="detail"><h2>'+escapeHTML(r.name)+'</h2><p class="muted">⏱ '+r.time+' минут · '+escapeHTML(r.category)+'</p><p>'+escapeHTML(r.desc)+'</p><div class="section-title"><h2>Ингредиенты</h2></div><div class="ingredients">'+r.ingredients.map(i=>{const item=i.split(/[—–-]/)[0].trim();return '<div class="ingredient-row"><img class="ingredient-photo" loading="lazy" src="'+foodPhotoUrl(item,160,160)+'" alt="'+escapeHTML(item)+'" onerror="this.style.display=\'none\'"><span>'+escapeHTML(i)+'</span></div>'}).join('')+'</div><button class="btn full" id="addIngredients">＋ Добавить ингредиенты в покупки</button><div class="section-title"><h2>Приготовление</h2></div><ol class="ingredients">'+r.steps.map(s=>'<li>'+escapeHTML(s)+'</li>').join('')+'</ol><button class="btn secondary full" id="toggleFavorite">'+(favorites.includes(r.id)?'♥ В избранном':'♡ В избранное')+'</button></div>';$('home').classList.add('hidden');$('detail').classList.remove('hidden');$('back').onclick=()=>showTab('home');$('addIngredients').onclick=()=>{const added=r.ingredients.map(i=>{const key=i.trim().toLocaleLowerCase('ru');const existing=shopping.find(x=>String(x.name||'').trim().toLocaleLowerCase('ru')===key);return existing?{...existing,source:'recipe',recipeName:r.name}:{name:i,done:false,source:'recipe',recipeName:r.name};});const addedKeys=new Set(added.map(x=>String(x.name||'').trim().toLocaleLowerCase('ru')));shopping=[...added,...shopping.filter(x=>!addedKeys.has(String(x.name||'').trim().toLocaleLowerCase('ru')))];save();renderShopping();$('addIngredients').textContent='✓ Добавлено в покупки';};$('toggleFavorite').onclick=()=>{favorites=favorites.includes(r.id)?favorites.filter(x=>x!==r.id):[...favorites,r.id];save();$('toggleFavorite').textContent=favorites.includes(r.id)?'♥ В избранном':'♡ В избранное';renderFavorites();renderRecommendations();renderProfile();};window.scrollTo(0,0)}
 $('recipes').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
