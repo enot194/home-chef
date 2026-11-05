@@ -41,6 +41,16 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
  <div id="weeklyMenu"></div>
  <button class="btn full" id="menuToShopping">🛒 Добавить ингредиенты на неделю в покупки</button>
  <p id="menuStatus" class="muted" role="status"></p>
+ <div class="card" style="padding:15px;margin-top:16px">
+  <div class="section-title" style="margin:0 0 8px"><h2>💰 Бюджет на неделю</h2></div>
+  <div id="menuBudget"></div>
+  <details style="margin-top:12px">
+   <summary style="cursor:pointer;color:var(--accent);font-weight:600">Настроить стоимость блюд</summary>
+   <p class="muted">Укажите примерную стоимость ингредиентов для каждого рецепта. Значения сохраняются на этом устройстве.</p>
+   <div id="recipeCostEditor"></div>
+  </details>
+  <p class="muted" style="margin:10px 0 0">Расчёт ориентировочный: цены зависят от магазина, сезона и размера порций. Можно изменить любую сумму.</p>
+ </div>
 </section>
 <section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
 <section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
@@ -225,6 +235,29 @@ $('search').addEventListener('input',renderRecipes);
 function renderFavorites(){$('favoriteList').innerHTML=favorites.length?recipes.filter(r=>favorites.includes(r.id)).map(cardHTML).join(''):'<div class="empty">Пока нет избранных рецептов.<br>Нажмите ♡ в карточке блюда.</div>'}
 $('favoriteList').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
 const weekDays=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const defaultRecipeCosts={1:6,2:2.5,3:14,4:7,5:7,6:7,7:8,8:4,9:17,10:5,11:7,12:4,13:11,14:8,15:15,16:3};
+let recipeCosts={...defaultRecipeCosts,...get('hc_recipe_costs',{})};
+const formatMoney=value=>new Intl.NumberFormat('ru-RU',{style:'currency',currency:'PLN',maximumFractionDigits:2}).format(value);
+function renderMenuBudget(){
+ const target=$('menuBudget'),editor=$('recipeCostEditor');
+ if(!target||!editor)return;
+ const dayTotals=weeklyMenu.map(day=>mealSlots.reduce((sum,slot)=>{
+  const id=Number(day?.[slot.key]);return sum+(id&&Number.isFinite(Number(recipeCosts[id]))?Number(recipeCosts[id]):0);
+ },0));
+ const meals=weeklyMenu.reduce((n,day)=>n+mealSlots.filter(slot=>day?.[slot.key]).length,0);
+ const total=dayTotals.reduce((a,b)=>a+b,0);
+ target.innerHTML=meals?'<div style="font-size:27px;font-weight:800;margin:4px 0 2px">'+formatMoney(total)+'</div><div class="muted">Примерно за '+meals+' блюд · '+formatMoney(total/7)+' в среднем за день</div><div style="margin-top:12px">'+dayTotals.map((cost,i)=>'<div class="row" style="padding:5px 0;border-bottom:1px solid var(--line)"><span>'+(weekDays[i])+'</span><strong style="text-align:right">'+(weeklyMenu[i]&&mealSlots.some(slot=>weeklyMenu[i][slot.key])?formatMoney(cost):'—')+'</strong></div>').join('')+'</div>':'<div class="muted">Составьте меню или выберите блюда — здесь появится примерная стоимость недели.</div>';
+ editor.innerHTML=recipes.map(r=>'<label class="row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)"><span style="flex:1">'+r.emoji+' '+escapeHTML(r.name)+'</span><input data-recipe-cost="'+r.id+'" type="number" min="0" step="0.5" value="'+Number(recipeCosts[r.id]??0)+'" aria-label="Стоимость '+escapeHTML(r.name)+' в злотых" style="width:95px;flex:0 0 95px;padding:8px"></label>').join('');
+}
+$('recipeCostEditor').addEventListener('change',e=>{
+ const id=Number(e.target.dataset.recipeCost);
+ if(!id||!recipes.some(r=>r.id===id))return;
+ const value=Number(e.target.value);
+ if(!Number.isFinite(value)||value<0){e.target.value=recipeCosts[id]??0;return;}
+ recipeCosts[id]=Math.round(value*100)/100;
+ localStorage.setItem('hc_recipe_costs',JSON.stringify(recipeCosts));
+ renderMenuBudget();
+});
 const mealSlots=[
  {key:'breakfast',label:'🍳 Завтрак',category:'Завтрак'},
  {key:'lunch',label:'🍲 Обед',categories:['Обед','Супы','Салаты']},
@@ -243,6 +276,7 @@ function renderWeeklyMenu(){
   }).join('');
   return '<div class="item" style="display:block;padding:14px"><strong>'+day+'</strong>'+controls+'</div>';
  }).join('');
+ renderMenuBudget();
 }
 $('weeklyMenu').addEventListener('change',e=>{
  const day=Number(e.target.dataset.menuDay),meal=e.target.dataset.menuMeal;
