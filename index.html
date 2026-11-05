@@ -65,7 +65,7 @@ let favorites=get('hc_favorites',[]), shopping=get('hc_shopping',[]);
 const SUPABASE_URL='https://rmsvfltgweidxykrroxx.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_rPsmbDjDPdfNJVSRid6m_A_KpifTsDl';
 const SUPABASE_FUNCTION=SUPABASE_URL+'/functions/v1/home-chef-sync';
-let cloudReady=false,cloudEnabled=false,cloudTimer=null,cloudRequestRunning=false;
+let cloudReady=false,cloudEnabled=false,cloudTimer=null,cloudRequestRunning=false,favoritesCloudReady=false,favoritesTimer=null;
 function save(){
  localStorage.setItem('hc_favorites',JSON.stringify(favorites));
  localStorage.setItem('hc_shopping',JSON.stringify(shopping));
@@ -98,6 +98,11 @@ async function syncShoppingToCloud(){
   cloudRequestRunning=false;
  }
 }
+async function syncFavoritesToCloud(){
+ if(!favoritesCloudReady||!cloudEnabled)return;
+ try{await cloudRequest({action:'favorites_save',recipeIds:favorites});}
+ catch(error){console.error('Не удалось сохранить избранное в облаке:',error);}
+}
 async function initializeCloudSync(){
  const tg=window.Telegram?.WebApp;
  if(!tg){
@@ -111,7 +116,7 @@ async function initializeCloudSync(){
  setCloudStatus('Подключаемся к облаку…');
  try{
   const result=await cloudRequest({action:'list'});
-  if(!result?.success||!Array.isArray(result.items))throw new Error('Не удалось загрузить список');
+  if(!result?.success||!Array.isArray(result.items))throw new Error('Не удалось загрузить список покупок');
   cloudEnabled=true;
   if(result.items.length>0){
    shopping=result.items.map(x=>({name:String(x.name),done:!!x.done}));
@@ -120,9 +125,21 @@ async function initializeCloudSync(){
    await cloudRequest({items:shopping.map(x=>({name:x.name,done:!!x.done}))});
   }
   cloudReady=true;
+
+  const favoriteResult=await cloudRequest({action:'favorites_list'});
+  if(!favoriteResult?.success||!Array.isArray(favoriteResult.recipeIds))throw new Error('Не удалось загрузить избранное');
+  if(favoriteResult.recipeIds.length>0){
+   favorites=[...new Set(favoriteResult.recipeIds.map(Number).filter(Number.isInteger))];
+   localStorage.setItem('hc_favorites',JSON.stringify(favorites));
+  }else if(favorites.length>0){
+   await cloudRequest({action:'favorites_save',recipeIds:favorites});
+  }
+  favoritesCloudReady=true;
   if(currentTab==='shopping')renderShopping();
-  setCloudStatus('☁️ Облако подключено. Список покупок синхронизируется автоматически.');
-  console.log('Облачная синхронизация включена');
+  if(currentTab==='favorites')renderFavorites();
+  renderProfile();
+  setCloudStatus('☁️ Облако подключено. Покупки и избранное синхронизируются автоматически.');
+  console.log('Облачная синхронизация покупок и избранного включена');
  }catch(error){
   cloudReady=false;
   cloudEnabled=false;
