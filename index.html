@@ -335,21 +335,21 @@ $('menuToShopping').onclick=()=>{
  $('menuStatus').textContent=added?'Добавлено '+added+' новых позиций. Повторы исключены.':'Все ингредиенты этих блюд уже есть в списке покупок.';
 };
 const groceryPrices={
- // Оценочные значения приложения в рублях за кг, л или штуку.
- 'молоко':{value:97,unit:'l'},'кефир':{value:110,unit:'l'},'сливки':{value:350,unit:'l'},
- 'сыр':{value:1100,unit:'kg'},'сметана':{value:333,unit:'kg'},'йогурт':{value:360,unit:'kg'},
- 'масло сливочное':{value:1350,unit:'kg'},'хлеб':{value:194,unit:'kg'},'мёд':{value:900,unit:'kg'},'мед':{value:900,unit:'kg'},
+ // Средние по Москве и Санкт-Петербургу за сентябрь 2026 там, где есть совпадающие позиции Росстата.
+ 'молоко':{value:98.5,unit:'l'},'кефир':{value:115,unit:'l'},'сливки':{value:350,unit:'l'},
+ 'сыр':{value:1050,unit:'kg'},'сметана':{value:350,unit:'kg'},'йогурт':{value:350,unit:'kg'},
+ 'масло сливочное':{value:1250,unit:'kg'},'хлеб':{value:194,unit:'kg'},'мёд':{value:900,unit:'kg'},'мед':{value:900,unit:'kg'},
  'шампиньоны':{value:400,unit:'kg'},'ягоды':{value:650,unit:'kg'},'фета':{value:1100,unit:'kg'},
- 'фарш':{value:600,unit:'kg'},'филе рыбы':{value:640,unit:'kg'},'рыба':{value:640,unit:'kg'},
- 'яйца':{value:10.14,unit:'each'},'яйцо':{value:10.14,unit:'each'},
- 'курица':{value:280,unit:'kg'},'картофель':{value:63,unit:'kg'},'лук':{value:63,unit:'kg'},
- 'макароны':{value:130,unit:'kg'},'овсяные хлопья':{value:188,unit:'kg'},
- 'помидоры':{value:240,unit:'kg'},'томаты':{value:240,unit:'kg'},'огурец':{value:140,unit:'kg'},'огурцы':{value:140,unit:'kg'},
- 'чеснок':{value:400,unit:'kg'},'творог':{value:474,unit:'kg'},'мука':{value:67,unit:'kg'},
- 'сахар':{value:83,unit:'kg'},'рис':{value:160,unit:'kg'},'морковь':{value:70,unit:'kg'},'перец':{value:250,unit:'kg'},
- 'лимон':{value:200,unit:'kg'},'яблоко':{value:170,unit:'kg'},'яблоки':{value:170,unit:'kg'},
- 'гречка':{value:89,unit:'kg'},'вермишель':{value:140,unit:'kg'},'масло растительное':{value:170,unit:'l'},
- 'банан':{value:130,unit:'kg'},'бананы':{value:130,unit:'kg'}
+ 'фарш':{value:600,unit:'kg'},'филе рыбы':{value:595,unit:'kg'},'рыба':{value:595,unit:'kg'},
+ 'яйца':{value:12,unit:'each'},'яйцо':{value:12,unit:'each'},
+ 'курица':{value:280,unit:'kg'},'картофель':{value:59,unit:'kg'},'лук':{value:63,unit:'kg'},
+ 'макароны':{value:173,unit:'kg'},'овсяные хлопья':{value:183,unit:'kg'},
+ 'помидоры':{value:230,unit:'kg'},'томаты':{value:230,unit:'kg'},'огурец':{value:140,unit:'kg'},'огурцы':{value:140,unit:'kg'},
+ 'чеснок':{value:400,unit:'kg'},'творог':{value:497.5,unit:'kg'},'мука':{value:67,unit:'kg'},
+ 'сахар':{value:85.5,unit:'kg'},'рис':{value:165,unit:'kg'},'морковь':{value:70,unit:'kg'},'перец':{value:250,unit:'kg'},
+ 'лимон':{value:200,unit:'kg'},'яблоко':{value:165,unit:'kg'},'яблоки':{value:165,unit:'kg'},
+ 'гречка':{value:89,unit:'kg'},'вермишель':{value:140,unit:'kg'},'масло растительное':{value:165,unit:'l'},
+ 'банан':{value:140,unit:'kg'},'бананы':{value:140,unit:'kg'}
 };
 function estimateShoppingItem(raw){
  const text=String(raw||'').toLocaleLowerCase('ru').trim();
@@ -393,7 +393,7 @@ function renderGroceryCatalog(){
  const searchWasFocused=document.activeElement?.id==='catalogSearch';const searchCursor=$('catalogSearch')?.selectionStart??null;
  const q=($('catalogSearch')?.value||'').trim().toLocaleLowerCase('ru');
  const visible=groceryCatalog.filter(group=>(catalogCategory==='Все'||catalogCategory===group.category)).map(group=>({...group,items:group.items.filter(item=>!q||item[0].toLocaleLowerCase('ru').includes(q))})).filter(group=>group.items.length);
- root.innerHTML='<div style="font-weight:750;margin-bottom:8px">🧺 Каталог продуктов</div><p class="muted" style="margin:0 0 10px">Выберите продукты и добавьте их в список. Цены ориентировочные, в рублях. Это оценки приложения, а не цены конкретного магазина и не официальная статистика Росстата. Для продуктов без надёжного соответствия цена не рассчитывается.</p><input id="catalogSearch" class="search" placeholder="🔎 Найти продукт" value="'+escapeHTML($('catalogSearch')?.value||'')+'"><div class="chips" style="margin-top:9px"><button class="chip '+(catalogCategory==='Все'?'active':'')+'" data-catalog-category="Все">Все</button>'+groceryCatalog.map(g=>'<button class="chip '+(catalogCategory===g.category?'active':'')+'" data-catalog-category="'+escapeHTML(g.category)+'">'+escapeHTML(g.category)+'</button>').join('')+'</div>'+visible.map(group=>'<div style="font-weight:650;margin:12px 0 7px">'+escapeHTML(group.category)+'</div><div class="grid">'+group.items.map(([name,emoji])=>{const price=estimateShoppingItem(name);return '<div class="card" style="padding:10px;cursor:default"><div style="font-size:24px">'+emoji+'</div><div style="font-size:13px;font-weight:600;min-height:38px">'+escapeHTML(name)+'</div><div class="muted" style="margin:5px 0 8px">'+(price!==null?'≈ '+formatMoney(price):'Цена уточняется')+'</div><button class="btn full" style="margin:0;padding:8px" data-catalog-add="'+escapeHTML(name)+'">＋ Добавить</button></div>';}).join('')+'</div>').join('')+(visible.length?'':'<div class="empty">Ничего не найдено.</div>');
+ root.innerHTML='<div style="font-weight:750;margin-bottom:8px">🧺 Каталог продуктов</div><p class="muted" style="margin:0 0 10px">Выберите продукты и добавьте их в список. Средние ориентиры по совпадающим позициям Росстата для Москвы и Санкт-Петербурга за сентябрь 2026 года. Значения пересчитаны к единой единице и усреднены между городами. Для остальных продуктов показана оценка приложения; это не цены конкретного магазина.</p><input id="catalogSearch" class="search" placeholder="🔎 Найти продукт" value="'+escapeHTML($('catalogSearch')?.value||'')+'"><div class="chips" style="margin-top:9px"><button class="chip '+(catalogCategory==='Все'?'active':'')+'" data-catalog-category="Все">Все</button>'+groceryCatalog.map(g=>'<button class="chip '+(catalogCategory===g.category?'active':'')+'" data-catalog-category="'+escapeHTML(g.category)+'">'+escapeHTML(g.category)+'</button>').join('')+'</div>'+visible.map(group=>'<div style="font-weight:650;margin:12px 0 7px">'+escapeHTML(group.category)+'</div><div class="grid">'+group.items.map(([name,emoji])=>{const price=estimateShoppingItem(name);return '<div class="card" style="padding:10px;cursor:default"><div style="font-size:24px">'+emoji+'</div><div style="font-size:13px;font-weight:600;min-height:38px">'+escapeHTML(name)+'</div><div class="muted" style="margin:5px 0 8px">'+(price!==null?'≈ '+formatMoney(price):'Цена уточняется')+'</div><button class="btn full" style="margin:0;padding:8px" data-catalog-add="'+escapeHTML(name)+'">＋ Добавить</button></div>';}).join('')+'</div>').join('')+(visible.length?'':'<div class="empty">Ничего не найдено.</div>');
  if(searchWasFocused){$('catalogSearch').focus();if(searchCursor!==null)$('catalogSearch').setSelectionRange(searchCursor,searchCursor);}
  $('catalogSearch').addEventListener('input',renderGroceryCatalog);
  root.querySelectorAll('[data-catalog-category]').forEach(button=>button.onclick=()=>{catalogCategory=button.dataset.catalogCategory;renderGroceryCatalog();});
