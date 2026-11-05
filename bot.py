@@ -17,12 +17,14 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     WebAppInfo,
+    MenuButtonWebApp,
 )
 from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 DB_NAME = "home_chef.db"
+APP_URL = "https://enot194.github.io/home-chef/?v=20261105-2328"
 
 if not TOKEN:
     raise RuntimeError("Токен не найден в файле .env")
@@ -42,7 +44,7 @@ main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(
             text="📱 Открыть приложение",
-            web_app=WebAppInfo(url="https://enot194.github.io/home-chef/")
+            web_app=WebAppInfo(url=APP_URL)
         )],
         [KeyboardButton(text="🍳 Найти рецепт")],
         [KeyboardButton(text="🥘 Что приготовить?")],
@@ -554,6 +556,7 @@ async def show_purchases(message: Message):
 async def main():
     init_db()
     bot = Bot(token=TOKEN)
+    await bot.set_chat_menu_button(menu_button=MenuButtonWebApp(text="Домашний Шеф", web_app=WebAppInfo(url=APP_URL)))
     await dp.start_polling(bot)
 
 
