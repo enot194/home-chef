@@ -23,6 +23,10 @@ h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#c5d6d5}.wrap{padding:1
 <main class="wrap">
 <section id="home">
 <input id="search" class="search" placeholder="🔎 Найти блюдо или ингредиент">
+<div id="recommendationsSection">
+ <div class="section-title"><h2>✨ Подобрано для вас</h2><span class="muted" id="recommendationHint">Идеи на сегодня</span></div>
+ <div class="grid" id="recommendationGrid"></div>
+</div>
 <div class="section-title"><h2>Категории</h2></div>
 <div class="chips" id="categories"></div>
 <div class="section-title"><h2 id="catalogTitle">Что приготовим?</h2><span class="muted" id="count"></span></div>
@@ -137,6 +141,7 @@ async function initializeCloudSync(){
   favoritesCloudReady=true;
   if(currentTab==='shopping')renderShopping();
   if(currentTab==='favorites')renderFavorites();
+  renderRecommendations();
   renderProfile();
   setCloudStatus('☁️ Облако подключено. Покупки и избранное синхронизируются автоматически.');
   console.log('Облачная синхронизация покупок и избранного включена');
@@ -147,14 +152,30 @@ async function initializeCloudSync(){
   console.error('Облачная синхронизация пока недоступна:',error);
  }
 }
-function showTab(tab){currentTab=tab;['home','detail','favorites','shopping','profile'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='favorites')renderFavorites();if(tab==='shopping')renderShopping();if(tab==='profile')renderProfile();window.scrollTo(0,0)}
+function showTab(tab){currentTab=tab;['home','detail','favorites','shopping','profile'].forEach(x=>$(x).classList.toggle('hidden',x!==tab));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='favorites')renderFavorites();if(tab==='home')renderRecommendations();if(tab==='shopping')renderShopping();if(tab==='profile')renderProfile();window.scrollTo(0,0)}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 const cats=['Все','Завтрак','Обед','Ужин','Супы','Салаты','Десерты'];
 $('categories').innerHTML=cats.map(c=>'<button class="chip '+(c===category?'active':'')+'" data-cat="'+c+'">'+c+'</button>').join('');
 $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;category=b.dataset.cat;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x.dataset.cat===category));renderRecipes()});
-function renderRecipes(){const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
+function renderRecommendations(){
+ const grid=$('recommendationGrid');
+ if(!grid)return;
+ const liked=recipes.filter(r=>favorites.includes(r.id));
+ const likedCategories=new Set(liked.map(r=>r.category));
+ const likedWords=new Set(liked.flatMap(r=>r.ingredients.join(' ').toLowerCase().match(/[а-яё]{4,}/g)||[]));
+ const ranked=recipes.filter(r=>!favorites.includes(r.id)).map(r=>{
+  const words=r.ingredients.join(' ').toLowerCase().match(/[а-яё]{4,}/g)||[];
+  const overlap=words.filter(w=>likedWords.has(w)).length;
+  const score=(likedCategories.has(r.category)?4:0)+overlap*2+(r.time<=25?1:0);
+  return {recipe:r,score};
+ }).sort((a,b)=>b.score-a.score||a.recipe.time-b.recipe.time);
+ const chosen=ranked.slice(0,3);
+ $('recommendationHint').textContent=liked.length?'На основе вашего избранного':'Быстрые идеи на каждый день';
+ grid.innerHTML=chosen.map(x=>cardHTML(x.recipe)).join('');
+}
+function renderRecipes(){renderRecommendations();const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
 function cardHTML(r){return '<article class="card" data-recipe="'+r.id+'"><div class="photo">'+r.emoji+'</div><div class="cardbody"><h3>'+r.name+'</h3><div class="muted">⏱ '+r.time+' мин · '+r.category+'</div></div></article>'}
-function openRecipe(id){const r=recipes.find(x=>x.id===Number(id));if(!r)return;$('detail').innerHTML='<button class="btn secondary back" id="back">← Назад</button><div class="detail-photo">'+r.emoji+'</div><div class="detail"><h2>'+r.name+'</h2><p class="muted">⏱ '+r.time+' минут · '+r.category+'</p><p>'+r.desc+'</p><div class="section-title"><h2>Ингредиенты</h2></div><ul class="ingredients">'+r.ingredients.map(i=>'<li>'+i+'</li>').join('')+'</ul><button class="btn full" id="addIngredients">＋ Добавить ингредиенты в покупки</button><div class="section-title"><h2>Приготовление</h2></div><ol class="ingredients">'+r.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol><button class="btn secondary full" id="toggleFavorite">'+(favorites.includes(r.id)?'♥ В избранном':'♡ В избранное')+'</button></div>';$('home').classList.add('hidden');$('detail').classList.remove('hidden');$('back').onclick=()=>showTab('home');$('addIngredients').onclick=()=>{r.ingredients.forEach(i=>{if(!shopping.some(x=>x.name===i))shopping.push({name:i,done:false})});save();$('addIngredients').textContent='✓ Добавлено в покупки';};$('toggleFavorite').onclick=()=>{favorites=favorites.includes(r.id)?favorites.filter(x=>x!==r.id):[...favorites,r.id];save();$('toggleFavorite').textContent=favorites.includes(r.id)?'♥ В избранном':'♡ В избранное';};window.scrollTo(0,0)}
+function openRecipe(id){const r=recipes.find(x=>x.id===Number(id));if(!r)return;$('detail').innerHTML='<button class="btn secondary back" id="back">← Назад</button><div class="detail-photo">'+r.emoji+'</div><div class="detail"><h2>'+r.name+'</h2><p class="muted">⏱ '+r.time+' минут · '+r.category+'</p><p>'+r.desc+'</p><div class="section-title"><h2>Ингредиенты</h2></div><ul class="ingredients">'+r.ingredients.map(i=>'<li>'+i+'</li>').join('')+'</ul><button class="btn full" id="addIngredients">＋ Добавить ингредиенты в покупки</button><div class="section-title"><h2>Приготовление</h2></div><ol class="ingredients">'+r.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol><button class="btn secondary full" id="toggleFavorite">'+(favorites.includes(r.id)?'♥ В избранном':'♡ В избранное')+'</button></div>';$('home').classList.add('hidden');$('detail').classList.remove('hidden');$('back').onclick=()=>showTab('home');$('addIngredients').onclick=()=>{r.ingredients.forEach(i=>{if(!shopping.some(x=>x.name===i))shopping.push({name:i,done:false})});save();$('addIngredients').textContent='✓ Добавлено в покупки';};$('toggleFavorite').onclick=()=>{favorites=favorites.includes(r.id)?favorites.filter(x=>x!==r.id):[...favorites,r.id];save();$('toggleFavorite').textContent=favorites.includes(r.id)?'♥ В избранном':'♡ В избранное';renderFavorites();renderRecommendations();renderProfile();};window.scrollTo(0,0)}
 $('recipes').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
 $('search').addEventListener('input',renderRecipes);
 function renderFavorites(){$('favoriteList').innerHTML=favorites.length?recipes.filter(r=>favorites.includes(r.id)).map(cardHTML).join(''):'<div class="empty">Пока нет избранных рецептов.<br>Нажмите ♡ в карточке блюда.</div>'}
