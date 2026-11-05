@@ -20,7 +20,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.card{background:var(--panel);border:1px solid #eee8dc;border-radius:21px;overflow:hidden;cursor:pointer;min-width:0;box-shadow:0 4px 14px rgba(72,65,48,.055)}
 .photo{height:148px;display:grid;place-items:center;font-size:48px;background:#ece8dc;overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover;display:block}
 .detail-photo{height:230px;padding:0;overflow:hidden}.detail-photo img{width:100%;height:100%;object-fit:cover}
-.ingredient-photo,.ingredient-row .photo-fallback{width:58px;height:58px;flex:0 0 58px;border-radius:13px;object-fit:cover;display:grid;place-items:center;background:#f1eee5;font-size:29px}.ingredient-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.ingredient-row>span:last-child{flex:1}
+.ingredient-photo,.ingredient-row .photo-fallback{width:58px;height:58px;flex:0 0 58px;border-radius:13px;object-fit:cover;display:grid;place-items:center;background:#f1eee5;font-size:10px;color:#858879;text-align:center;padding:4px}.photo-missing{background:linear-gradient(135deg,#eee9df,#e6e1d6);color:#858879;font-size:12px;text-align:center;padding:8px}.ingredient-row .photo-missing{font-size:9px;padding:3px}.ingredient-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.ingredient-row>span:last-child{flex:1}
 .cardbody{display:block!important;padding:13px 13px 15px;background:#fffdf8!important;color:#343b30!important;min-height:72px}.card h3{display:block!important;color:#343b30!important;visibility:visible!important;opacity:1!important}.card h3{font-size:15px;margin:0 0 5px;line-height:1.35}.muted{color:var(--muted);font-size:13px}
 .btn{border:0;border-radius:14px;background:#78845b;color:white;font-weight:650;padding:12px 15px;font:inherit;cursor:pointer}.btn.secondary{background:#f0eee5;color:#5e674e;border:1px solid #e5e1d5}.btn.full{width:100%;margin-top:10px}
 .row{display:flex;gap:9px;align-items:center}.row>*{flex:1}.hidden{display:none!important}
@@ -325,9 +325,10 @@ function foodPhotoUrl(query,w=640,h=420){
 function ingredientEmoji(name){const s=String(name||'').toLocaleLowerCase('ru');const rules=[[/яйц/,'🥚'],[/молок|сливк|йогурт|кефир/,'🥛'],[/сыр|фет|творог/,'🧀'],[/куриц/,'🍗'],[/картофел/,'🥔'],[/банан/,'🍌'],[/яблок/,'🍎'],[/ягод/,'🫐'],[/овсян/,'🥣'],[/макарон|паст/,'🍝'],[/рис/,'🍚'],[/рыб/,'🐟'],[/томат|помидор/,'🍅'],[/огур/,'🥒'],[/морков/,'🥕'],[/лук/,'🧅'],[/чеснок/,'🧄'],[/перец/,'🫑'],[/зелень|петруш/,'🌿'],[/масл/,'🫒'],[/мук/,'🌾'],[/фарш/,'🥩'],[/лимон/,'🍋'],[/соль/,'🧂']];const hit=rules.find(([re])=>re.test(s));return hit?hit[1]:'🛒';}
 function imageOrEmoji(query,emoji,w=640,h=420){
  const url=foodPhotoUrl(query,w,h);
- const fallback='<span class="photo-fallback" role="img" aria-label="'+escapeHTML(query)+'">'+emoji+'</span>';
+ const label=escapeHTML(String(query||'Продукт'));
+ const fallback='<span class="photo-fallback photo-missing" role="img" aria-label="Фотография: '+label+'">Фото продукта</span>';
  return url
-  ?'<img loading="lazy" src="'+url+'" alt="'+escapeHTML(query)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" role="img" aria-label="'+escapeHTML(query)+'" hidden>'+emoji+'</span>'
+  ?'<img loading="lazy" src="'+url+'" alt="'+label+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+fallback.replace('<span ','<span hidden ')
   :fallback;
 }
 function cardHTML(r){return '<article class="card" data-recipe="'+r.id+'"><div class="photo">'+imageOrEmoji(r.name,r.emoji,640,420)+'</div><div class="cardbody"><h3>'+escapeHTML(r.name)+'</h3><div class="muted">⏱ '+r.time+' мин · '+escapeHTML(r.category)+'</div></div></article>'}
@@ -362,7 +363,7 @@ function renderExternalRecipes(items){
   const kcal=externalRecipeValue(item,['Kcal','kcal','calories','energy']);
   const price=externalRecipeValue(item,['Cost','cost','price','portionPrice']);
   const facts=[time?('⏱ '+time+' мин'):'',kcal?(Math.round(Number(kcal))+' ккал'):'',price?('≈ '+Math.round(Number(price))+' ₽/порция'):''].filter(Boolean).join(' · ');
-  const visual=imageUrl?'<img loading="lazy" src="'+escapeHTML(imageUrl)+'" alt="'+escapeHTML(String(name))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" hidden>🍽️</span>':'<span class="photo-fallback">🍽️</span>';
+  const visual=imageUrl?'<img loading="lazy" src="'+escapeHTML(imageUrl)+'" alt="'+escapeHTML(String(name))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback photo-missing" hidden>Фото блюда</span>':'<span class="photo-fallback photo-missing">Фото блюда</span>';
   return '<article class="card external-recipe-card" data-external-recipe="'+escapeHTML(String(id))+'" data-external-title="'+escapeHTML(String(name))+'" data-external-image="'+escapeHTML(imageUrl)+'" role="button" tabindex="0"><div class="photo">'+visual+'</div><div class="cardbody"><h3>'+escapeHTML(String(name))+'</h3><div class="muted">'+escapeHTML(facts||'Рецепт и ингредиенты')+'</div><div class="muted" style="margin-top:7px;color:var(--accent)">Открыть рецепт в приложении</div></div></article>';
  }).join('');
 }
@@ -389,12 +390,12 @@ async function openExternalRecipe(id,fallbackTitle,fallbackImage){
   const time=externalRecipeValue(data,['timeMin','TimeMin']);
   const kcal=externalRecipeValue(data,['kcal','Kcal']);
   const price=externalRecipeValue(data,['cost','Cost']);
-  const hero=image?'<img src="'+escapeHTML(image)+'" alt="'+escapeHTML(String(title))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback" hidden>🍽️</span>':'<span class="photo-fallback">🍽️</span>';
+  const hero=image?'<img src="'+escapeHTML(image)+'" alt="'+escapeHTML(String(title))+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback photo-missing" hidden>Фото блюда</span>':'<span class="photo-fallback photo-missing">Фото блюда</span>';
   const ingredientHTML=ingredients.map(item=>{
    const name=externalRecipeValue(item,['name','Name'])||'Продукт';
    const ingImage=externalImageUrl(externalRecipeValue(item,['image','Image']));
    const emoji=ingredientEmoji(name);
-   const pic=ingImage?'<img class="ingredient-photo" loading="lazy" src="'+escapeHTML(ingImage)+'" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback ingredient-photo" hidden>'+emoji+'</span>':'<span class="photo-fallback ingredient-photo">'+emoji+'</span>';
+   const pic=ingImage?'<img class="ingredient-photo" loading="lazy" src="'+escapeHTML(ingImage)+'" alt="'+escapeHTML(name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="photo-fallback photo-missing ingredient-photo" hidden>Фото продукта</span>':'<span class="photo-fallback photo-missing ingredient-photo">Фото продукта</span>';
    return '<div class="ingredient-row">'+pic+'<span>'+escapeHTML(externalIngredientLine(item))+'</span></div>';
   }).join('');
   const stepsHTML=steps.map(step=>'<li>'+escapeHTML(String(step))+'</li>').join('');
