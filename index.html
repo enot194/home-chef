@@ -37,7 +37,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 .external-recipe-card .muted{font-size:12px}
 .external-recipe-card{width:100%;text-align:left;font:inherit;cursor:pointer}
 .external-recipe-card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-.recipe-catalog>summary{list-style:none;cursor:pointer;gap:10px;user-select:none}.recipe-catalog>summary::-webkit-details-marker{display:none}.recipe-catalog>summary h2{flex:1}.catalog-toggle{flex:0 0 auto;color:var(--accent);font-size:13px;font-weight:650;padding:7px 10px;border:1px solid var(--line);border-radius:12px;background:#fffdf8}.recipe-catalog>summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:10px}.recipe-catalog:not([open]) .catalog-toggle{font-size:0}.recipe-catalog:not([open]) .catalog-toggle:after{content:"Развернуть";font-size:13px}.recipe-catalog[open] .catalog-toggle{font-size:0}.recipe-catalog[open] .catalog-toggle:after{content:"Свернуть";font-size:13px}.recipe-catalog:not([open]){margin-bottom:18px}.recipe-catalog[open] #recipes{margin-bottom:4px}
+.recipe-catalog{margin-bottom:22px}.recipe-card-hidden{display:none!important}#toggleRecipeCatalog{margin-top:12px}#recommendationsSection{margin-top:24px}
 .external-detail{padding:14px 0 30px}
 .external-detail h2{margin:10px 0 6px}
 .external-detail .detail-photo{border-radius:18px;background:#eee9df}
@@ -54,16 +54,17 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 <main class="wrap">
 <section id="home">
 <input id="search" class="search" placeholder="🔎 Найти блюдо или ингредиент">
-<div id="recommendationsSection">
- <div class="section-title"><h2>✨ Подобрано для вас</h2><span class="muted" id="recommendationHint">Идеи на сегодня</span></div>
- <div class="grid" id="recommendationGrid"></div>
-</div>
 <div class="section-title"><h2>Категории</h2></div>
 <div class="chips" id="categories"></div>
-<details id="recipeCatalog" class="recipe-catalog">
- <summary class="section-title"><h2 id="catalogTitle">Что приготовим?</h2><span class="muted" id="count"></span><span class="catalog-toggle" aria-hidden="true">Свернуть</span></summary>
+<div id="recipeCatalog" class="recipe-catalog">
+ <div class="section-title"><h2 id="catalogTitle">Что приготовим?</h2><span class="muted" id="count"></span></div>
  <div class="grid" id="recipes"></div>
-</details>
+ <button class="btn secondary full" id="toggleRecipeCatalog" type="button">Показать все рецепты</button>
+</div>
+<div id="recommendationsSection">
+ <div class="section-title"><h2>✨ Подобрано для вас</h2><span class="muted" id="recommendationHint">Завтрак · Обед · Ужин · Десерт</span></div>
+ <div class="grid" id="recommendationGrid"></div>
+</div>
 <div class="external-recipes card" style="padding:15px;margin-top:18px">
  <div class="section-title"><h2>🍲 Ещё рецепты</h2></div>
  <p class="muted">Ищите дополнительные блюда по названию или продуктам. Полный рецепт и оригинал доступны на сайте источника.</p>
@@ -315,7 +316,8 @@ function renderRecommendations(){
  $('recommendationHint').textContent='Завтрак · Обед · Ужин · Десерт';
  grid.innerHTML=chosen.map(x=>cardHTML(x.recipe)).join('');
 }
-function renderRecipes(){renderRecommendations();const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map(cardHTML).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>'}
+let recipesExpanded=false;
+function renderRecipes(){renderRecommendations();const q=$('search').value.toLowerCase().trim();const list=recipes.filter(r=>(category==='Все'||r.category===category)&&(r.name+' '+r.ingredients.join(' ')).toLowerCase().includes(q));$('count').textContent=list.length+' блюд';$('recipes').innerHTML=list.length?list.map((r,i)=>cardHTML(r).replace('class="card"','class="card '+(i>=4&&!recipesExpanded?'recipe-card-hidden':'')+'"')).join(''):'<div class="empty">Ничего не найдено. Попробуйте другой запрос.</div>';$('toggleRecipeCatalog').hidden=list.length<=4;$('toggleRecipeCatalog').textContent=recipesExpanded?'Свернуть':'Показать все рецепты'}
 const recipePhotoMap={
  'Сырный омлет':'https://images.pexels.com/photos/12310569/pexels-photo-12310569.jpeg?auto=compress&cs=tinysrgb&w=900',
  'Овсянка с бананом':'https://images.pexels.com/photos/35578518/pexels-photo-35578518/free-photo-of-delicious-banana-oatmeal-breakfast-bowl.jpeg?auto=compress&cs=tinysrgb&w=900',
@@ -468,6 +470,7 @@ function imageOrEmoji(query,emoji,w=640,h=420){
 function cardHTML(r){return '<article class="card" data-recipe="'+r.id+'"><div class="photo">'+imageOrEmoji(r.name,r.emoji,640,420)+'</div><div class="cardbody"><h3>'+escapeHTML(r.name)+'</h3><div class="muted">⏱ '+r.time+' мин · '+escapeHTML(r.category)+'</div></div></article>'}
 function openRecipe(id){const r=recipes.find(x=>x.id===Number(id));if(!r)return;$('detail').innerHTML='<button class="btn secondary back" id="back">← Назад</button><div class="detail-photo">'+imageOrEmoji(r.name,r.emoji,900,520)+'</div><div class="detail"><h2>'+escapeHTML(r.name)+'</h2><p class="muted">⏱ '+r.time+' минут · '+escapeHTML(r.category)+'</p><p>'+escapeHTML(r.desc)+'</p><div class="section-title"><h2>Ингредиенты</h2></div><div class="ingredients">'+r.ingredients.flatMap(i=>{const raw=i.split(/[—–-]/)[0].trim();const parts=raw.split(/,\s*/).filter(Boolean);return parts.map(item=>'<div class="ingredient-row">'+imageOrEmoji(item,ingredientEmoji(item),160,160).replace('<img ','<img class="ingredient-photo" ')+'<span>'+escapeHTML(parts.length>1?item:i)+'</span></div>')}).join('')+'</div><button class="btn full" id="addIngredients">＋ Добавить ингредиенты в покупки</button><div class="section-title"><h2>Приготовление</h2></div><ol class="ingredients">'+r.steps.map(s=>'<li>'+escapeHTML(s)+'</li>').join('')+'</ol><button class="btn secondary full" id="toggleFavorite">'+(favorites.includes(r.id)?'♥ В избранном':'♡ В избранное')+'</button></div>';$('home').classList.add('hidden');$('detail').classList.remove('hidden');$('back').onclick=()=>showTab('home');$('addIngredients').onclick=()=>{const added=r.ingredients.map(i=>{const key=i.trim().toLocaleLowerCase('ru');const existing=shopping.find(x=>String(x.name||'').trim().toLocaleLowerCase('ru')===key);return existing?{...existing,source:'recipe',recipeName:r.name}:{name:i,done:false,source:'recipe',recipeName:r.name};});const addedKeys=new Set(added.map(x=>String(x.name||'').trim().toLocaleLowerCase('ru')));shopping=[...added,...shopping.filter(x=>!addedKeys.has(String(x.name||'').trim().toLocaleLowerCase('ru')))];save();renderShopping();$('addIngredients').textContent='✓ Добавлено в покупки';};$('toggleFavorite').onclick=()=>{favorites=favorites.includes(r.id)?favorites.filter(x=>x!==r.id):[...favorites,r.id];save();$('toggleFavorite').textContent=favorites.includes(r.id)?'♥ В избранном':'♡ В избранное';renderFavorites();renderRecommendations();renderProfile();};window.scrollTo(0,0)}
 $('recipes').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
+$('toggleRecipeCatalog').addEventListener('click',()=>{recipesExpanded=!recipesExpanded;renderRecipes();});
 $('recommendationGrid').addEventListener('click',e=>{const card=e.target.closest('[data-recipe]');if(card)openRecipe(card.dataset.recipe)});
 $('search').addEventListener('input',renderRecipes);
 const externalRecipeCache=new Map();
