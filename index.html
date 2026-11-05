@@ -251,7 +251,9 @@ const weekDays=['Понедельник','Вторник','Среда','Четв
 const defaultRecipeCostsSPB={1:150,2:65,3:350,4:175,5:175,6:175,7:200,8:100,9:425,10:125,11:175,12:100,13:275,14:200,15:375,16:75};
 const defaultRecipeCostsMoscow={1:160,2:70,3:370,4:185,5:185,6:185,7:210,8:105,9:450,10:130,11:185,12:105,13:290,14:210,15:395,16:80};
 const defaultRecipeCosts=Object.fromEntries(Object.keys(defaultRecipeCostsSPB).map(id=>[id,Math.round((defaultRecipeCostsSPB[id]+defaultRecipeCostsMoscow[id])/2)]));
-const savedRecipeCosts=get('hc_recipe_costs_ru',{});\nlet recipeCosts={...defaultRecipeCosts,...savedRecipeCosts};\nfunction recipeCostFor(recipe){if(Object.prototype.hasOwnProperty.call(savedRecipeCosts,String(recipe.id)))return Number(recipeCosts[recipe.id])||0;const values=recipe.ingredients.map(estimateShoppingItem);if(values.length&&values.every(value=>value!==null))return Math.round(values.reduce((a,b)=>a+b,0));return Number(recipeCosts[recipe.id]??defaultRecipeCosts[recipe.id]??0);}
+const savedRecipeCosts=get('hc_recipe_costs_ru',{});
+let recipeCosts={...defaultRecipeCosts,...savedRecipeCosts};
+function recipeCostFor(recipe){if(Object.prototype.hasOwnProperty.call(savedRecipeCosts,String(recipe.id)))return Number(recipeCosts[recipe.id])||0;const values=recipe.ingredients.map(estimateShoppingItem);if(values.length&&values.every(value=>value!==null))return Math.round(values.reduce((a,b)=>a+b,0));return Number(recipeCosts[recipe.id]??defaultRecipeCosts[recipe.id]??0);}
 const formatMoney=value=>new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB',maximumFractionDigits:0}).format(value);
 function renderMenuBudget(){
  const target=$('menuBudget'),editor=$('recipeCostEditor');
