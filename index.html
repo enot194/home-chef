@@ -100,7 +100,14 @@ async function syncShoppingToCloud(){
 }
 async function initializeCloudSync(){
  const tg=window.Telegram?.WebApp;
- if(!tg?.initData){setCloudStatus('Облако не подключено: Telegram не передал данные авторизации. Открой приложение кнопкой в чате с ботом.');return;}
+ if(!tg){
+  setCloudStatus('Диагностика: Telegram WebApp SDK не обнаружен. Версия страницы: '+location.href);
+  return;
+ }
+ if(!tg.initData){
+  setCloudStatus('Диагностика: Telegram SDK найден, но initData пустой. Платформа: '+(tg.platform||'неизвестна')+'; версия Telegram WebApp: '+(tg.version||'неизвестна')+'. Открой приложение заново из личного чата с ботом.');
+  return;
+ }
  setCloudStatus('Подключаемся к облаку…');
  try{
   const result=await cloudRequest({action:'list'});
