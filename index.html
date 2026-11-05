@@ -356,7 +356,7 @@ function estimateShoppingItem(raw){
  const split=text.split(/[—–-]/);
  if(split.length<2)return null;
  const name=split[0].trim(), amount=split.slice(1).join(' ').trim();
- const match=amount.match(/(\\d+(?:[.,]\\d+)?|½|¼)\\s*(кг|г|мл|л|шт\\.?|ст\\.\\s*л\\.?|ч\\.\\s*л\\.?)/i);
+ const match=amount.match(/(\d+(?:[.,]\d+)?|½|¼)\s*(кг|г|мл|л|шт\.?|ст\.\s*л\.?|ч\.\s*л\.?)/i);
  if(!match)return null;
  const qty=match[1]==='½'?0.5:match[1]==='¼'?0.25:Number(match[1].replace(',','.'));
  const unit=match[2].toLowerCase().replace(/\\s/g,'');
