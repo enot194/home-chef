@@ -80,11 +80,12 @@ if(!Array.isArray(weeklyMenu)||weeklyMenu.length!==7)weeklyMenu=Array(7).fill(nu
 const SUPABASE_URL='https://rmsvfltgweidxykrroxx.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_rPsmbDjDPdfNJVSRid6m_A_KpifTsDl';
 const SUPABASE_FUNCTION=SUPABASE_URL+'/functions/v1/home-chef-sync';
-let cloudReady=false,cloudEnabled=false,cloudTimer=null,cloudRequestRunning=false,favoritesCloudReady=false,favoritesTimer=null;
+let cloudReady=false,cloudEnabled=false,cloudTimer=null,cloudRequestRunning=false,favoritesCloudReady=false,favoritesTimer=null,menuCloudTimer=null,menuCloudReady=false;
 function save(){
  localStorage.setItem('hc_favorites',JSON.stringify(favorites));
  localStorage.setItem('hc_shopping',JSON.stringify(shopping));
  localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ if(cloudReady&&cloudEnabled&&menuCloudReady){clearTimeout(menuCloudTimer);menuCloudTimer=setTimeout(()=>syncWeeklyMenuToCloud(),700);}
  if(cloudReady&&cloudEnabled){
   clearTimeout(cloudTimer);
   cloudTimer=setTimeout(()=>syncShoppingToCloud(),600);
@@ -113,6 +114,11 @@ async function syncShoppingToCloud(){
  }finally{
   cloudRequestRunning=false;
  }
+}
+async function syncWeeklyMenuToCloud(){
+ if(!cloudReady||!cloudEnabled||!menuCloudReady)return;
+ try{await cloudRequest({action:'menu_save',menu:weeklyMenu});}
+ catch(error){console.error('Не удалось сохранить меню в облаке:',error);}
 }
 async function syncFavoritesToCloud(){
  if(!favoritesCloudReady||!cloudEnabled)return;
@@ -151,12 +157,22 @@ async function initializeCloudSync(){
    await cloudRequest({action:'favorites_save',recipeIds:favorites});
   }
   favoritesCloudReady=true;
+  const menuResult=await cloudRequest({action:'menu_get'});
+  if(!menuResult?.success)throw new Error('Не удалось загрузить недельное меню');
+  if(Array.isArray(menuResult.menu)&&menuResult.menu.length===7){
+   weeklyMenu=menuResult.menu.map(id=>id===null?null:Number(id)).map(id=>Number.isInteger(id)&&id>0?id:null);
+   localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+  }else if(weeklyMenu.some(id=>id!==null)){
+   await cloudRequest({action:'menu_save',menu:weeklyMenu});
+  }
+  menuCloudReady=true;
+
   if(currentTab==='shopping')renderShopping();
   if(currentTab==='favorites')renderFavorites();
   renderRecommendations();
   renderProfile();
-  setCloudStatus('☁️ Облако подключено. Покупки и избранное синхронизируются автоматически.');
-  console.log('Облачная синхронизация покупок и избранного включена');
+  setCloudStatus('☁️ Облако подключено. Покупки, избранное и меню синхронизируются автоматически.');
+  console.log('Облачная синхронизация покупок, избранного и меню включена');
  }catch(error){
   cloudReady=false;
   cloudEnabled=false;
@@ -205,7 +221,7 @@ function renderWeeklyMenu(){
 $('weeklyMenu').addEventListener('change',e=>{
  if(e.target.dataset.menuDay===undefined)return;
  weeklyMenu[Number(e.target.dataset.menuDay)]=e.target.value?Number(e.target.value):null;
- localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ save();
  renderWeeklyMenu();
 });
 $('generateMenu').onclick=()=>{
@@ -213,13 +229,13 @@ $('generateMenu').onclick=()=>{
  const preferred=pool.filter(r=>favorites.includes(r.id));
  const chosen=[...preferred,...pool.filter(r=>!favorites.includes(r.id))];
  weeklyMenu=Array.from({length:7},(_,i)=>chosen[i%chosen.length].id);
- localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ save();
  renderWeeklyMenu();
  $('menuStatus').textContent='Меню на 7 дней готово. Можешь заменить любое блюдо вручную.';
 };
 $('clearMenu').onclick=()=>{
  weeklyMenu=Array(7).fill(null);
- localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
+ save();
  renderWeeklyMenu();
  $('menuStatus').textContent='План очищен.';
 };
