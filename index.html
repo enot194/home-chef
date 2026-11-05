@@ -272,8 +272,8 @@ $('recipeCostEditor').addEventListener('change',e=>{
  if(!id||!recipes.some(r=>r.id===id))return;
  const value=Number(e.target.value);
  if(!Number.isFinite(value)||value<0){e.target.value=recipeCosts[id]??0;return;}
- recipeCosts[id]=Math.round(value);
- localStorage.setItem('hc_recipe_costs_ru',JSON.stringify(recipeCosts));
+ recipeCosts[id]=Math.round(value);savedRecipeCosts[id]=Math.round(value);
+ localStorage.setItem('hc_recipe_costs_ru',JSON.stringify(savedRecipeCosts));
  renderMenuBudget();
 });
 const mealSlots=[
