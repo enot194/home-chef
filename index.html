@@ -75,8 +75,22 @@ let category='Все',currentTab='home';
 const $=id=>document.getElementById(id);
 const get=(key,def)=>{try{return JSON.parse(localStorage.getItem(key))||def}catch{return def}};
 let favorites=get('hc_favorites',[]), shopping=get('hc_shopping',[]);
-let weeklyMenu=get('hc_weekly_menu',Array(7).fill(null));
-if(!Array.isArray(weeklyMenu)||weeklyMenu.length!==7)weeklyMenu=Array(7).fill(null);
+const emptyDay=()=>({breakfast:null,lunch:null,dinner:null});
+function normalizeWeeklyMenu(value){
+ if(!Array.isArray(value)||value.length!==7)return Array.from({length:7},emptyDay);
+ return value.map(day=>{
+  if(day&&typeof day==='object'&&!Array.isArray(day))return {
+   breakfast:Number.isInteger(Number(day.breakfast))&&Number(day.breakfast)>0?Number(day.breakfast):null,
+   lunch:Number.isInteger(Number(day.lunch))&&Number(day.lunch)>0?Number(day.lunch):null,
+   dinner:Number.isInteger(Number(day.dinner))&&Number(day.dinner)>0?Number(day.dinner):null
+  };
+  const legacy=recipes.find(r=>r.id===Number(day));
+  const item=emptyDay();
+  if(legacy){const slot=legacy.category==='Завтрак'?'breakfast':legacy.category==='Ужин'?'dinner':'lunch';item[slot]=legacy.id;}
+  return item;
+ });
+}
+let weeklyMenu=normalizeWeeklyMenu(get('hc_weekly_menu',Array.from({length:7},emptyDay)));
 const SUPABASE_URL='https://rmsvfltgweidxykrroxx.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_rPsmbDjDPdfNJVSRid6m_A_KpifTsDl';
 const SUPABASE_FUNCTION=SUPABASE_URL+'/functions/v1/home-chef-sync';
@@ -160,7 +174,7 @@ async function initializeCloudSync(){
   const menuResult=await cloudRequest({action:'menu_get'});
   if(!menuResult?.success)throw new Error('Не удалось загрузить недельное меню');
   if(Array.isArray(menuResult.menu)&&menuResult.menu.length===7){
-   weeklyMenu=menuResult.menu.map(id=>id===null?null:Number(id)).map(id=>Number.isInteger(id)&&id>0?id:null);
+   weeklyMenu=normalizeWeeklyMenu(menuResult.menu);
    localStorage.setItem('hc_weekly_menu',JSON.stringify(weeklyMenu));
   }else if(weeklyMenu.some(id=>id!==null)){
    await cloudRequest({action:'menu_save',menu:weeklyMenu});
@@ -211,37 +225,52 @@ $('search').addEventListener('input',renderRecipes);
 function renderFavorites(){$('favoriteList').innerHTML=favorites.length?recipes.filter(r=>favorites.includes(r.id)).map(cardHTML).join(''):'<div class="empty">Пока нет избранных рецептов.<br>Нажмите ♡ в карточке блюда.</div>'}
 $('favoriteList').addEventListener('click',e=>{const c=e.target.closest('[data-recipe]');if(c)openRecipe(c.dataset.recipe)});
 const weekDays=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const mealSlots=[
+ {key:'breakfast',label:'🍳 Завтрак',category:'Завтрак'},
+ {key:'lunch',label:'🍲 Обед',categories:['Обед','Супы','Салаты']},
+ {key:'dinner',label:'🍽 Ужин',category:'Ужин'}
+];
 function renderWeeklyMenu(){
  const box=$('weeklyMenu');if(!box)return;
  box.innerHTML=weekDays.map((day,index)=>{
-  const r=recipes.find(x=>x.id===Number(weeklyMenu[index]));
-  const options='<option value="">Выбрать блюдо…</option>'+recipes.map(x=>'<option value="'+x.id+'" '+(r&&r.id===x.id?'selected':'')+'>'+x.emoji+' '+escapeHTML(x.name)+'</option>').join('');
-  return '<div class="item" style="display:block"><strong>'+day+'</strong><select data-menu-day="'+index+'" style="width:100%;margin-top:8px;padding:11px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--line)">'+options+'</select>'+(r?'<div class="muted" style="margin-top:6px">⏱ '+r.time+' мин · '+r.category+'</div>':'')+'</div>';
+  const plan=weeklyMenu[index]||emptyDay();
+  const controls=mealSlots.map(slot=>{
+   const selected=Number(plan[slot.key]);
+   const pool=recipes.filter(r=>slot.category?r.category===slot.category:slot.categories.includes(r.category));
+   const options='<option value="">Выбрать блюдо…</option>'+pool.map(r=>'<option value="'+r.id+'" '+(selected===r.id?'selected':'')+'>'+r.emoji+' '+escapeHTML(r.name)+'</option>').join('');
+   const chosen=recipes.find(r=>r.id===selected);
+   return '<label style="display:block;margin-top:10px"><strong>'+slot.label+'</strong><select data-menu-day="'+index+'" data-menu-meal="'+slot.key+'" style="width:100%;margin-top:5px;padding:11px;border-radius:10px;background:var(--bg);color:var(--text);border:1px solid var(--line)">'+options+'</select>'+(chosen?'<div class="muted" style="margin-top:4px">⏱ '+chosen.time+' мин</div>':'')+'</label>';
+  }).join('');
+  return '<div class="item" style="display:block;padding:14px"><strong>'+day+'</strong>'+controls+'</div>';
  }).join('');
 }
 $('weeklyMenu').addEventListener('change',e=>{
- if(e.target.dataset.menuDay===undefined)return;
- weeklyMenu[Number(e.target.dataset.menuDay)]=e.target.value?Number(e.target.value):null;
+ const day=Number(e.target.dataset.menuDay),meal=e.target.dataset.menuMeal;
+ if(!Number.isInteger(day)||!mealSlots.some(x=>x.key===meal))return;
+ weeklyMenu[day]=weeklyMenu[day]||emptyDay();
+ weeklyMenu[day][meal]=e.target.value?Number(e.target.value):null;
  save();
  renderWeeklyMenu();
 });
 $('generateMenu').onclick=()=>{
- const pool=[...recipes].sort(()=>Math.random()-.5);
- const preferred=pool.filter(r=>favorites.includes(r.id));
- const chosen=[...preferred,...pool.filter(r=>!favorites.includes(r.id))];
- weeklyMenu=Array.from({length:7},(_,i)=>chosen[i%chosen.length].id);
- save();
- renderWeeklyMenu();
- $('menuStatus').textContent='Меню на 7 дней готово. Можешь заменить любое блюдо вручную.';
+ const pick=(slot)=>recipes.filter(r=>slot.category?r.category===slot.category:slot.categories.includes(r.category))
+  .sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))||Math.random()-.5);
+ weeklyMenu=Array.from({length:7},()=>({
+  breakfast:pick(mealSlots[0])[Math.floor(Math.random()*pick(mealSlots[0]).length)]?.id??null,
+  lunch:pick(mealSlots[1])[Math.floor(Math.random()*pick(mealSlots[1]).length)]?.id??null,
+  dinner:pick(mealSlots[2])[Math.floor(Math.random()*pick(mealSlots[2]).length)]?.id??null
+ }));
+ save();renderWeeklyMenu();
+ $('menuStatus').textContent='Готово: на каждый день подобраны завтрак, обед и ужин.';
 };
 $('clearMenu').onclick=()=>{
- weeklyMenu=Array(7).fill(null);
- save();
- renderWeeklyMenu();
+ weeklyMenu=Array.from({length:7},emptyDay);
+ save();renderWeeklyMenu();
  $('menuStatus').textContent='План очищен.';
 };
 $('menuToShopping').onclick=()=>{
- const planned=recipes.filter(r=>weeklyMenu.includes(r.id));
+ const ids=[...new Set(weeklyMenu.flatMap(day=>Object.values(day||{}).filter(Boolean)))];
+ const planned=recipes.filter(r=>ids.includes(r.id));
  const existing=new Set(shopping.map(x=>x.name.trim().toLocaleLowerCase('ru')));
  let added=0;
  planned.forEach(r=>r.ingredients.forEach(name=>{
