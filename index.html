@@ -52,7 +52,7 @@ h1{font-size:27px;letter-spacing:-.7px;margin:0 0 7px;font-weight:750}header p{m
 <div class="section-title"><h2 id="catalogTitle">Что приготовим?</h2><span class="muted" id="count"></span></div>
 <div class="grid" id="recipes"></div>
 <div class="external-recipes card" style="padding:15px;margin-top:18px">
- <div class="section-title"><h2>🍲 Ещё рецепты</h2><span class="muted">из базы «Рацион»</span></div>
+ <div class="section-title"><h2>🍲 Ещё рецепты</h2></div>
  <p class="muted">Ищите дополнительные блюда по названию или продуктам. Полный рецепт и оригинал доступны на сайте источника.</p>
  <div class="row"><input id="externalRecipeSearch" placeholder="Например: курица, суп, сырники" aria-label="Поиск рецептов в Рационе"><button class="btn" id="externalRecipeButton">Найти</button></div>
  <p id="externalRecipeStatus" class="muted" role="status">Нажмите «Найти», чтобы загрузить рецепты.</p>
@@ -342,7 +342,7 @@ function renderExternalRecipes(items){
  target.innerHTML=items.map(item=>{
   const id=externalRecipeValue(item,['id','recipeId','recipe_id']);
   const name=externalRecipeValue(item,['name','title','recipeName'])||'Рецепт';
-  const imageUrl=externalRecipeValue(item,['image','imageUrl','image_url','photo','thumbnail','cover']);
+  const imageUrl=externalRecipeValue(item,['image','imageUrl','image_url','photo','thumbnail','cover'])||recipePhotoMap[String(name).trim()]||'';
   const time=externalRecipeValue(item,['time','timeMinutes','cookingTime','minutes']);
   const kcal=externalRecipeValue(item,['kcal','calories','energy']);
   const price=externalRecipeValue(item,['price','portionPrice','cost']);
@@ -360,7 +360,7 @@ async function searchExternalRecipes(){
  if(!query){status.textContent='Введите название блюда или продукт для поиска.';input.focus();return;}
  const cacheKey=query.toLocaleLowerCase('ru');
  const cached=externalRecipeCache.get(cacheKey);
- if(cached&&Date.now()-cached.time<300000){renderExternalRecipes(cached.items);status.textContent='Результаты из недавнего поиска · источник: Рацион';return;}
+ if(cached&&Date.now()-cached.time<300000){renderExternalRecipes(cached.items);status.textContent='Результаты из недавнего поиска';return;}
  button.disabled=true;status.textContent='Ищем рецепты…';
  try{
   const url='https://racion.app/api/recipes?q='+encodeURIComponent(query)+'&country=RU&lang=ru&limit=8';
@@ -370,7 +370,7 @@ async function searchExternalRecipes(){
   const items=externalRecipeList(payload);
   externalRecipeCache.set(cacheKey,{items,time:Date.now()});
   renderExternalRecipes(items);
-  status.textContent=items.length?'Найдено: '+items.length+' · данные загружены из «Рациона»':'Ничего не найдено. Попробуйте другое слово.';
+  status.textContent=items.length?'Найдено рецептов: '+items.length:'Ничего не найдено. Попробуйте другое слово.';
  }catch(error){
   status.textContent='Не удалось загрузить рецепты. Попробуйте позже. ('+(error?.message||'ошибка соединения')+')';
   $('externalRecipeResults').innerHTML='';
