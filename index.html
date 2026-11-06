@@ -103,6 +103,14 @@ header:after{content:"";position:absolute;width:190px;height:190px;border-radius
  <p class="muted">Изменения будут опубликованы для всех пользователей после сохранения.</p>
  <label for="adminSubtitle"><strong>Подзаголовок главной страницы</strong></label>
  <input id="adminSubtitle" type="text" maxlength="140" placeholder="Вкусные идеи, простые рецепты и покупки без суеты" style="width:100%;margin:8px 0 16px"><label for="adminAccent"><strong>Основной цвет кнопок</strong></label><input id="adminAccent" type="color" value="#78845b" style="width:100%;height:48px;margin:8px 0 16px">
+ <div style="padding:14px;background:#f7f3eb;border:1px solid #e9e3d7;border-radius:16px;margin:8px 0 18px">
+  <strong>Профиль Telegram-бота</strong>
+  <p id="botProfileStatus" class="muted">Проверяем связь с Telegram…</p>
+  <label for="botPhotoInput"><strong>Новая фотография бота</strong></label>
+  <input id="botPhotoInput" type="file" accept="image/*" style="margin:8px 0">
+  <button class="btn full" id="setBotPhoto" type="button">Обновить аватарку в Telegram</button>
+  <p id="botPhotoStatus" class="muted" role="status"></p>
+ </div>
  <label for="adminRecipes"><strong>Рецепты (JSON)</strong></label>
  <p class="muted">Можно редактировать названия, описания, категории, время, ингредиенты, шаги и поле image (ссылка на фото). Сохраняйте структуру JSON.</p>
  <textarea id="adminRecipes" rows="14" spellcheck="false" style="width:100%;font:12px/1.45 monospace;resize:vertical"></textarea>
@@ -871,6 +879,7 @@ async function loadAdminPanel(){
   const data=await cloudRequest({action:'admin_content_get'});
   if(!data?.success)return;
   $('adminEntry').style.display='block';
+  checkTelegramBotProfile();
   let current=Array.isArray(data.recipes)?data.recipes:[];
   if(!current.length){
    current=recipes;
@@ -891,6 +900,49 @@ async function loadAdminPanel(){
 }
 $('openAdmin').onclick=()=>{$('adminPanel').style.display='block';$('adminEntry').style.display='none';};
 $('closeAdmin').onclick=()=>{$('adminPanel').style.display='none';$('adminEntry').style.display='block';};
+async function checkTelegramBotProfile(){
+ const status=$('botProfileStatus');
+ try{
+  const data=await cloudRequest({action:'admin_bot_status'});
+  status.textContent=data?.success?'Связь установлена: @'+(data.bot?.username||'HomeChefFamilyBot'):'Не удалось проверить Telegram.';
+ }catch(error){
+  status.textContent='Проверка Telegram не удалась: '+(error.message||error);
+ }
+}
+$('setBotPhoto').onclick=async()=>{
+ const input=$('botPhotoInput'),status=$('botPhotoStatus'),button=$('setBotPhoto');
+ const file=input.files?.[0];
+ if(!file){status.textContent='Сначала выберите изображение.';return;}
+ if(!file.type.startsWith('image/')){status.textContent='Выберите файл изображения.';return;}
+ button.disabled=true;status.textContent='Подготавливаем изображение…';
+ try{
+  const dataUrl=await new Promise((resolve,reject)=>{
+   const reader=new FileReader();
+   reader.onload=()=>resolve(reader.result);
+   reader.onerror=()=>reject(new Error('Не удалось прочитать изображение.'));
+   reader.readAsDataURL(file);
+  });
+  const img=await new Promise((resolve,reject)=>{
+   const image=new Image();
+   image.onload=()=>resolve(image);
+   image.onerror=()=>reject(new Error('Не удалось открыть изображение.'));
+   image.src=dataUrl;
+  });
+  const side=Math.min(img.naturalWidth,img.naturalHeight);
+  const sx=(img.naturalWidth-side)/2,sy=(img.naturalHeight-side)/2;
+  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=640;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,640,640);
+  ctx.drawImage(img,sx,sy,side,side,0,0,640,640);
+  const jpeg=canvas.toDataURL('image/jpeg',0.9);
+  status.textContent='Отправляем фотографию в Telegram…';
+  await cloudRequest({action:'admin_bot_profile_photo',photoBase64:jpeg});
+  status.textContent='Готово! Telegram подтвердил обновление аватарки бота.';
+  input.value='';
+ }catch(error){
+  status.textContent='Не удалось обновить аватарку: '+(error.message||error);
+ }finally{button.disabled=false;}
+};
 $('saveAdmin').onclick=async()=>{
  const status=$('adminStatus');const button=$('saveAdmin');
  try{
