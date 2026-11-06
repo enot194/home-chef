@@ -119,7 +119,7 @@ header:after{content:"";position:absolute;width:190px;height:190px;border-radius
 </nav>
 <script>
 try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();tg.setBackgroundColor?.("#f7f3eb");tg.setHeaderColor?.("#e9dfca");}}catch(e){console.warn("Telegram theme setup:",e)}
-const recipes=[
+let recipes=[
 {id:1,name:'Сырный омлет',emoji:'🍳',category:'Завтрак',time:15,desc:'Нежный омлет с сыром на каждый день.',ingredients:['Яйца — 3 шт.','Молоко — 50 мл','Сыр — 50 г','Соль — по вкусу'],steps:['Взбейте яйца с молоком и солью.','Вылейте смесь на разогретую сковороду.','Добавьте сыр и готовьте под крышкой 5–7 минут.']},
 {id:2,name:'Овсянка с бананом',emoji:'🥣',category:'Завтрак',time:10,desc:'Быстрый и сытный завтрак.',ingredients:['Овсяные хлопья — 50 г','Молоко или вода — 200 мл','Банан — 1 шт.','Мёд — по желанию'],steps:['Залейте хлопья молоком или водой.','Варите 5–7 минут, помешивая.','Добавьте нарезанный банан и мёд.']},
 {id:3,name:'Курица с картофелем',emoji:'🍗',category:'Ужин',time:45,desc:'Домашнее блюдо из доступных продуктов.',ingredients:['Курица — 400 г','Картофель — 500 г','Лук — 1 шт.','Масло, соль, специи'],steps:['Нарежьте картофель и лук.','Выложите всё в форму, добавьте курицу и специи.','Запекайте при 190°C около 35–40 минут до готовности.']},
@@ -285,6 +285,7 @@ async function initializeCloudSync(){
    recipes=published.recipes;
    renderRecipes();renderFavorites();renderRecommendations();
   }
+  if(published.settings&&typeof published.settings==='object')applyAdminSettings(published.settings);
  }catch(error){console.warn('Не удалось загрузить опубликованные рецепты:',error);}
 
  try{
