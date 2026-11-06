@@ -97,7 +97,18 @@ header:after{content:"";position:absolute;width:190px;height:190px;border-radius
  </div>
 </section>
 <section id="shopping" class="hidden"><div class="section-title"><h2>Список покупок 🛒</h2><button class="btn secondary" id="clearList">Очистить</button></div><div class="row"><input id="newItem" placeholder="Добавить продукт"><button class="btn" id="addItem">Добавить</button></div><button class="btn full" id="sendToBot">📲 Передать список в Telegram-бот</button><div id="shoppingStoreControls" class="card" style="padding:13px;margin-top:12px"></div><p class="muted">Отправит текущий список покупок в чат с ботом.</p><p id="cloudStatus" class="muted" role="status">Проверяем подключение к облаку…</p><div id="shoppingList"></div></section>
-<section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div id="analyticsCard" class="card" style="display:none;padding:16px;margin-top:14px"><div class="section-title" style="margin:0 0 12px"><h2>Статистика приложения</h2></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px"><div><strong id="analyticsTotal" style="font-size:25px">0</strong><div class="muted">Всего посетителей</div></div><div><strong id="analyticsToday" style="font-size:25px">0</strong><div class="muted">Сегодня</div></div><div><strong id="analytics7" style="font-size:25px">0</strong><div class="muted">За 7 дней</div></div><div><strong id="analytics30" style="font-size:25px">0</strong><div class="muted">За 30 дней</div></div><div><strong id="analyticsReturning" style="font-size:25px">0</strong><div class="muted">Возвращались повторно</div></div></div><p class="muted" id="analyticsUpdated" style="margin:12px 0 0">Уникальные пользователи, часовой пояс Москвы.</p></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div></section>
+<section id="profile" class="hidden"><div class="section-title"><h2>Мой профиль</h2></div><div class="card" style="padding:18px"><div style="font-size:42px">👤</div><h2 id="userName">Домашний повар</h2><p class="muted">Ваш помощник на кухне всегда под рукой.</p><div class="row"><div><strong id="favCount">0</strong><div class="muted">Избранное</div></div><div><strong id="buyCount">0</strong><div class="muted">Покупок</div></div></div></div><div id="analyticsCard" class="card" style="display:none;padding:16px;margin-top:14px"><div class="section-title" style="margin:0 0 12px"><h2>Статистика приложения</h2></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px"><div><strong id="analyticsTotal" style="font-size:25px">0</strong><div class="muted">Всего посетителей</div></div><div><strong id="analyticsToday" style="font-size:25px">0</strong><div class="muted">Сегодня</div></div><div><strong id="analytics7" style="font-size:25px">0</strong><div class="muted">За 7 дней</div></div><div><strong id="analytics30" style="font-size:25px">0</strong><div class="muted">За 30 дней</div></div><div><strong id="analyticsReturning" style="font-size:25px">0</strong><div class="muted">Возвращались повторно</div></div></div><p class="muted" id="analyticsUpdated" style="margin:12px 0 0">Уникальные пользователи, часовой пояс Москвы.</p></div><div class="section-title"><h2>Домашний Шеф+</h2></div><div class="card" style="padding:16px"><p>В будущем здесь появятся расширенные возможности: персональные меню, больше рецептов и умный подбор блюд.</p><button class="btn full" disabled style="opacity:.55">Подписка скоро появится</button><p class="muted">Оплата и подписка пока не подключены.</p></div><div id="adminEntry" class="card" style="display:none;padding:16px;margin-top:14px"><button class="btn full" id="openAdmin">⚙️ Администрирование</button></div>
+<div id="adminPanel" class="card" style="display:none;padding:16px;margin-top:14px">
+ <div class="section-title"><h2>Управление приложением</h2><button class="btn secondary" id="closeAdmin">Закрыть</button></div>
+ <p class="muted">Изменения будут опубликованы для всех пользователей после сохранения.</p>
+ <label for="adminSubtitle"><strong>Подзаголовок главной страницы</strong></label>
+ <input id="adminSubtitle" class="input" type="text" maxlength="140" placeholder="Вкусные идеи, простые рецепты и покупки без суеты" style="width:100%;margin:8px 0 16px">
+ <label for="adminRecipes"><strong>Рецепты (JSON)</strong></label>
+ <p class="muted">Можно редактировать названия, описания, категории, время, ингредиенты, шаги и поле image (ссылка на фото). Сохраняйте структуру JSON.</p>
+ <textarea id="adminRecipes" rows="14" spellcheck="false" style="width:100%;font:12px/1.45 monospace;resize:vertical"></textarea>
+ <button class="btn full" id="saveAdmin" style="margin-top:12px">Сохранить изменения</button>
+ <p id="adminStatus" class="muted" role="status" style="margin-top:10px"></p>
+</div></section>
 </main>
 <nav class="tabs">
 <button class="tab active" data-tab="home"><b>🏠</b>Главная</button>
@@ -269,10 +280,19 @@ async function initializeCloudSync(){
  }
  setCloudStatus('Подключаемся к облаку…');
  try{
+  const published=await cloudRequest({action:'content_public_get'});
+  if(Array.isArray(published.recipes)&&published.recipes.length){
+   recipes=published.recipes;
+   renderRecipes();renderFavorites();renderRecommendations();
+  }
+ }catch(error){console.warn('Не удалось загрузить опубликованные рецепты:',error);}
+
+ try{
   const result=await cloudRequest({action:'list'});
   if(!result?.success||!Array.isArray(result.items))throw new Error('Не удалось загрузить список покупок');
   cloudEnabled=true;
    await loadOwnerAnalytics();
+  await loadAdminPanel();
   if(result.items.length>0){
    shopping=result.items.map(x=>({name:String(x.name),done:!!x.done}));
    localStorage.setItem('hc_shopping',JSON.stringify(shopping));
@@ -830,6 +850,59 @@ $('sendToBot').onclick=()=>{
   return;
  }
  tg.sendData(JSON.stringify({type:'shopping_sync',items:shopping.map(x=>({name:x.name,done:!!x.done}))}));
+};
+
+function applyAdminSettings(settings){
+ const subtitle=$('adminSubtitle');
+ if(settings&&typeof settings.subtitle==='string'){
+  const target=document.querySelector('.brand-header p');
+  if(target)target.textContent=settings.subtitle;
+ }
+}
+async function loadAdminPanel(){
+ try{
+  const data=await cloudRequest({action:'admin_content_get'});
+  if(!data?.success)return;
+  $('adminEntry').style.display='block';
+  let current=Array.isArray(data.recipes)?data.recipes:[];
+  if(!current.length){
+   current=recipes;
+   await cloudRequest({action:'admin_content_save',content:{recipes:current,settings:{subtitle:'Вкусные идеи, простые рецепты и покупки без суеты'}}});
+  }else{
+   recipes=current;
+   renderRecipes();
+   renderFavorites();
+  }
+  const settings=data.settings&&typeof data.settings==='object'?data.settings:{};
+  $('adminRecipes').value=JSON.stringify(current,null,2);
+  $('adminSubtitle').value=settings.subtitle||'Вкусные идеи, простые рецепты и покупки без суеты';
+  applyAdminSettings(settings);
+ }catch(error){
+  if(!String(error?.message||error).includes('Forbidden'))console.warn('Admin panel:',error);
+ }
+}
+$('openAdmin').onclick=()=>{$('adminPanel').style.display='block';$('adminEntry').style.display='none';};
+$('closeAdmin').onclick=()=>{$('adminPanel').style.display='none';$('adminEntry').style.display='block';};
+$('saveAdmin').onclick=async()=>{
+ const status=$('adminStatus');const button=$('saveAdmin');
+ try{
+  const updated=JSON.parse($('adminRecipes').value);
+  if(!Array.isArray(updated)||!updated.length)throw new Error('Добавьте хотя бы один рецепт.');
+  const ids=new Set();
+  for(const r of updated){
+   if(!r||!Number.isInteger(Number(r.id))||!String(r.name||'').trim()||!Array.isArray(r.ingredients)||!Array.isArray(r.steps))throw new Error('У каждого рецепта должны быть id, название, ингредиенты и шаги.');
+   if(ids.has(Number(r.id)))throw new Error('ID рецептов должны быть уникальными.');
+   ids.add(Number(r.id));
+  }
+  button.disabled=true;status.textContent='Сохраняем…';
+  const settings={subtitle:$('adminSubtitle').value.trim()};
+  await cloudRequest({action:'admin_content_save',content:{recipes:updated,settings}});
+  recipes=updated;
+  applyAdminSettings(settings);
+  renderRecipes();renderFavorites();renderRecommendations();
+  status.textContent='Сохранено. Изменения доступны всем посетителям приложения.';
+ }catch(error){status.textContent='Не удалось сохранить: '+(error.message||error);}
+ finally{button.disabled=false;}
 };
 function renderProfile(){const u=window.Telegram?.WebApp?.initDataUnsafe?.user;$('userName').textContent=u?(u.first_name||'Повар')+(u.last_name?' '+u.last_name:''):'Домашний повар';$('favCount').textContent=favorites.length;$('buyCount').textContent=shopping.filter(x=>x.done).length}
 try{const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}}catch(e){}
