@@ -102,7 +102,7 @@ header:after{content:"";position:absolute;width:190px;height:190px;border-radius
  <div class="section-title"><h2>Управление приложением</h2><button class="btn secondary" id="closeAdmin">Закрыть</button></div>
  <p class="muted">Изменения будут опубликованы для всех пользователей после сохранения.</p>
  <label for="adminSubtitle"><strong>Подзаголовок главной страницы</strong></label>
- <input id="adminSubtitle" class="input" type="text" maxlength="140" placeholder="Вкусные идеи, простые рецепты и покупки без суеты" style="width:100%;margin:8px 0 16px">
+ <input id="adminSubtitle" type="text" maxlength="140" placeholder="Вкусные идеи, простые рецепты и покупки без суеты" style="width:100%;margin:8px 0 16px"><label for="adminAccent"><strong>Основной цвет кнопок</strong></label><input id="adminAccent" type="color" value="#78845b" style="width:100%;height:48px;margin:8px 0 16px">
  <label for="adminRecipes"><strong>Рецепты (JSON)</strong></label>
  <p class="muted">Можно редактировать названия, описания, категории, время, ингредиенты, шаги и поле image (ссылка на фото). Сохраняйте структуру JSON.</p>
  <textarea id="adminRecipes" rows="14" spellcheck="false" style="width:100%;font:12px/1.45 monospace;resize:vertical"></textarea>
@@ -501,7 +501,9 @@ function foodPhotoUrl(query,w=640,h=420){
 }
 function ingredientEmoji(name){const s=String(name||'').toLocaleLowerCase('ru');const rules=[[/яйц/,'🥚'],[/молок|сливк|йогурт|кефир/,'🥛'],[/сыр|фет|творог/,'🧀'],[/куриц/,'🍗'],[/картофел/,'🥔'],[/банан/,'🍌'],[/яблок/,'🍎'],[/ягод/,'🫐'],[/овсян/,'🥣'],[/макарон|паст/,'🍝'],[/рис/,'🍚'],[/рыб/,'🐟'],[/томат|помидор/,'🍅'],[/огур/,'🥒'],[/морков/,'🥕'],[/лук/,'🧅'],[/чеснок/,'🧄'],[/перец/,'🫑'],[/зелень|петруш/,'🌿'],[/масл/,'🫒'],[/мук/,'🌾'],[/фарш/,'🥩'],[/лимон/,'🍋'],[/соль/,'🧂']];const hit=rules.find(([re])=>re.test(s));return hit?hit[1]:'🛒';}
 function imageOrEmoji(query,emoji,w=640,h=420){
- const url=foodPhotoUrl(query,w,h);
+ const recipe=Array.isArray(recipes)?recipes.find(item=>item.name===query):null;
+ const custom=recipe&&typeof recipe.image==='string'&&/^https?:\/\//i.test(recipe.image)?recipe.image:null;
+ const url=custom||foodPhotoUrl(query,w,h);
  const label=escapeHTML(String(query||'Продукт'));
  const fallback='<span class="photo-fallback photo-missing" aria-hidden="true"></span>';
  return url
@@ -859,6 +861,10 @@ function applyAdminSettings(settings){
   const target=document.querySelector('.brand-header p');
   if(target)target.textContent=settings.subtitle;
  }
+ if(settings&&/^#[0-9a-f]{6}$/i.test(settings.accent||'')){
+  document.documentElement.style.setProperty('--accent',settings.accent);
+  document.querySelectorAll('.btn:not(.secondary),.chip.active').forEach(el=>{el.style.background=settings.accent;el.style.borderColor=settings.accent;});
+ }
 }
 async function loadAdminPanel(){
  try{
@@ -877,6 +883,7 @@ async function loadAdminPanel(){
   const settings=data.settings&&typeof data.settings==='object'?data.settings:{};
   $('adminRecipes').value=JSON.stringify(current,null,2);
   $('adminSubtitle').value=settings.subtitle||'Вкусные идеи, простые рецепты и покупки без суеты';
+  $('adminAccent').value=/^#[0-9a-f]{6}$/i.test(settings.accent||'')?settings.accent:'#78845b';
   applyAdminSettings(settings);
  }catch(error){
   if(!String(error?.message||error).includes('Forbidden'))console.warn('Admin panel:',error);
@@ -896,7 +903,7 @@ $('saveAdmin').onclick=async()=>{
    ids.add(Number(r.id));
   }
   button.disabled=true;status.textContent='Сохраняем…';
-  const settings={subtitle:$('adminSubtitle').value.trim()};
+  const settings={subtitle:$('adminSubtitle').value.trim(),accent:$('adminAccent').value};
   await cloudRequest({action:'admin_content_save',content:{recipes:updated,settings}});
   recipes=updated;
   applyAdminSettings(settings);
